@@ -11,7 +11,13 @@ export default function SignupPage() {
 
   async function signup() {
     setMessage("");
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: "https://carelink-academy-v4.vercel.app/login"
+  }
+});
     if (error) setMessage(error.message);
     else setMessage("Check your email to confirm your account, then log in.");
   }
