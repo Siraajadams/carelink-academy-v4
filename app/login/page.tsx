@@ -4,36 +4,50 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 
-export default function SignupPage() {
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function signup() {
+  async function login() {
     setMessage("");
 
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
     });
 
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage("Check your email to confirm your account, then log in.");
+      window.location.href = "/profile";
+    }
+  }
+
+  async function resetPassword() {
+    setMessage("");
+
+    if (!email) {
+      setMessage("Enter your email first.");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage("Password reset email sent.");
     }
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-blue-700">
-          Create your CareLink Academy account
-        </h1>
+        <h1 className="text-2xl font-bold">Login</h1>
 
         <input
           className="mt-6 w-full rounded-xl border p-3"
@@ -60,18 +74,25 @@ export default function SignupPage() {
         </div>
 
         <button
-          onClick={signup}
+          onClick={login}
           className="mt-5 w-full rounded-xl bg-blue-700 p-3 font-semibold text-white"
         >
-          Create Account
+          Login
+        </button>
+
+        <button
+          onClick={resetPassword}
+          className="mt-3 w-full rounded-xl border p-3"
+        >
+          Reset password
         </button>
 
         {message && <p className="mt-4 text-sm text-red-600">{message}</p>}
 
         <p className="mt-5 text-sm">
-          Already registered?{" "}
-          <Link className="text-blue-700" href="/login">
-            Login
+          New user?{" "}
+          <Link className="text-blue-700" href="/signup">
+            Create account
           </Link>
         </p>
       </div>
