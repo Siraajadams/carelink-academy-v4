@@ -15,7 +15,7 @@ export default function SignupPage() {
   email,
   password,
   options: {
-    emailRedirectTo: "https://carelink-academy-v4.vercel.app/login"
+    https://carelink-academy-v4-n3jwp4ffn-siraajadams2003-1686s-projects.vercel.app/
   }
 });
     if (error) setMessage(error.message);
