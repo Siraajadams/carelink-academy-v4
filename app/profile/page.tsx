@@ -4,6 +4,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
+const COURSE_OPTIONS = [
+  "CareLink Academy",
+  "Videomed",
+  "CPNBS",
+  "Clinical Voice Transcriber",
+  "Pharmacy First",
+  "Weight Management",
+  "HIV Prevention Services",
+  "Travel Health",
+  "Independent Prescribing",
+  "Vaccination Services",
+];
+
 export default function ProfilePage() {
   const router = useRouter();
 
@@ -17,7 +30,11 @@ export default function ProfilePage() {
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [workSetting, setWorkSetting] = useState("Pharmacy");
   const [organisation, setOrganisation] = useState("");
-  const [platformAccess, setPlatformAccess] = useState("CareLink, Videomed, CPNBS");
+  const [platformAccess, setPlatformAccess] = useState<string[]>([
+    "CareLink Academy",
+    "Videomed",
+    "CPNBS",
+  ]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +62,19 @@ export default function ProfilePage() {
     }
 
     setAge(String(calculated));
+  }
+
+  function parsePlatformAccess(value: string | string[] | null) {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   async function loadProfile() {
@@ -76,10 +106,24 @@ export default function ProfilePage() {
       setRegistrationNumber(data.registration_number || "");
       setWorkSetting(data.work_setting || "Pharmacy");
       setOrganisation(data.organisation || "");
-      setPlatformAccess(data.platform_access_needed || "CareLink, Videomed, CPNBS");
+      setPlatformAccess(
+        parsePlatformAccess(data.platform_access_needed) || [
+          "CareLink Academy",
+          "Videomed",
+          "CPNBS",
+        ]
+      );
     }
 
     setLoading(false);
+  }
+
+  function toggleCourse(course: string) {
+    if (platformAccess.includes(course)) {
+      setPlatformAccess(platformAccess.filter((item) => item !== course));
+    } else {
+      setPlatformAccess([...platformAccess, course]);
+    }
   }
 
   async function saveProfile() {
@@ -94,26 +138,34 @@ export default function ProfilePage() {
       return;
     }
 
-    const { error } = await supabase.from("healthcare_workers").upsert(
-      {
-        user_id: user.id,
-        email: user.email,
-        first_name: firstName,
-        surname,
-        date_of_birth: dob || null,
-        age: age ? Number(age) : null,
-        gender,
-        country,
-        profession,
-        registration_number: registrationNumber,
-        work_setting: workSetting,
-        organisation,
-        platform_access_needed: platformAccess,
-      },
-      {
-        onConflict: "user_id",
-      }
-    );
+    const profileData = {
+      user_id: user.id,
+      email: user.email,
+      first_name: firstName,
+      surname,
+      date_of_birth: dob || null,
+      age: age ? Number(age) : null,
+      gender,
+      country,
+      profession,
+      registration_number: registrationNumber,
+      work_setting: workSetting,
+      organisation,
+      platform_access_needed: platformAccess.join(", "),
+    };
+
+    const { data: existingProfile } = await supabase
+      .from("healthcare_workers")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const { error } = existingProfile
+      ? await supabase
+          .from("healthcare_workers")
+          .update(profileData)
+          .eq("user_id", user.id)
+      : await supabase.from("healthcare_workers").insert(profileData);
 
     if (error) {
       setMessage(error.message);
@@ -253,12 +305,24 @@ export default function ProfilePage() {
           />
         </div>
 
-        <input
-          className="mt-4 w-full rounded-xl border p-3"
-          placeholder="Platform access needed"
-          value={platformAccess}
-          onChange={(e) => setPlatformAccess(e.target.value)}
-        />
+        <div className="mt-4 rounded-xl border p-4">
+          <p className="mb-3 font-semibold text-slate-700">
+            Select Course / Platform Access
+          </p>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {COURSE_OPTIONS.map((course) => (
+              <label key={course} className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={platformAccess.includes(course)}
+                  onChange={() => toggleCourse(course)}
+                />
+                <span>{course}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
         <button
           onClick={saveProfile}
