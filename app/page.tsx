@@ -1,43 +1,54 @@
+"use client";
+
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
-import { GraduationCap, ClipboardCheck, FileVideo, BarChart3 } from "lucide-react";
 
-export default function Home() {
+export default function SignupPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function signup() {
+    setMessage("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: "https://carelink-academy-v4.vercel.app/profile",
+      },
+    });
+
+    if (error) setMessage(error.message);
+    else setMessage("Check your email to confirm your account, then complete your profile.");
+  }
+
   return (
-    <main className="min-h-screen">
-      <section className="bg-careblue text-white">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-carelight">CareLink Academy</p>
-          <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
-            Training healthcare teams for digital care.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-carelight">
-            A practical onboarding platform for doctors, pharmacists, nurses and counsellors using digital health platforms across South Africa, England, Wales, Scotland and New Zealand.
-          </p>
-          <div className="mt-8 flex gap-3">
-            <Link href="/signup" className="rounded-2xl bg-white px-6 py-3 font-semibold text-careblue shadow">
-              Create Profile
-            </Link>
-            <Link href="/login" className="rounded-2xl border border-white/40 px-6 py-3 font-semibold text-white">
-              Login
-            </Link>
-          </div>
-        </div>
-      </section>
+    <main className="flex min-h-screen items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow">
+        <h1 className="text-2xl font-bold text-blue-700">Create your CareLink Academy account</h1>
 
-      <section className="mx-auto grid max-w-6xl gap-5 px-6 py-12 md:grid-cols-4">
-        {[
-          ["Role-based learning", GraduationCap],
-          ["SOPs and videos", FileVideo],
-          ["Progress tracking", ClipboardCheck],
-          ["Knowledge reports", BarChart3],
-        ].map(([title, Icon]: any) => (
-          <div key={title} className="rounded-3xl bg-white p-6 shadow-sm">
-            <Icon className="mb-4 h-8 w-8 text-careblue" />
-            <h3 className="text-lg font-bold">{title}</h3>
-            <p className="mt-2 text-sm text-slate-600">Built for low-cost onboarding and operational readiness.</p>
-          </div>
-        ))}
-      </section>
+        <input className="mt-6 w-full rounded-xl border p-3" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+
+        <div className="mt-3 flex rounded-xl border">
+          <input className="w-full rounded-xl p-3" type={showPassword ? "text" : "password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button className="px-3" onClick={() => setShowPassword(!showPassword)} type="button">
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+
+        <button onClick={signup} className="mt-6 w-full rounded-xl bg-blue-700 p-3 font-semibold text-white">
+          Create Account
+        </button>
+
+        {message && <p className="mt-4 text-sm text-red-600">{message}</p>}
+
+        <p className="mt-5 text-sm">
+          Already registered? <Link href="/login" className="text-blue-700">Login</Link>
+        </p>
+      </div>
     </main>
   );
 }
