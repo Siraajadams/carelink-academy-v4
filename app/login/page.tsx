@@ -26,7 +26,7 @@ export default function LoginPage() {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://carelink-academy-v4.vercel.app/login",
+      redirectTo: const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/login`, }, });,
     });
 
     if (error) setMessage(error.message);
