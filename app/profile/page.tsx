@@ -1,60 +1,139 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
-const countries = ["England", "Wales", "Scotland", "South Africa", "New Zealand"];
-const roles = ["Doctor", "Pharmacist", "Nurse", "Counsellor", "Psychologist", "Pharmacy Assistant", "Admin"];
-
 export default function ProfilePage() {
   const router = useRouter();
-  const [userId, setUserId] = useState("");
-  const [form, setForm] = useState({
-    full_name: "",
-    country: "South Africa",
-    role: "Pharmacist",
-    registration_number: "",
-    organisation: "",
-    platform_access_needed: "CareLink, Videomed, CPNBS"
-  });
+
+  const [firstName, setFirstName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [dob, setDob] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [country, setCountry] = useState("South Africa");
+  const [profession, setProfession] = useState("Pharmacist");
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [workSetting, setWorkSetting] = useState("Pharmacy");
+  const [organisation, setOrganisation] = useState("");
+  const [platformAccess, setPlatformAccess] = useState("CareLink, Videomed, CPNBS");
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) router.push("/login");
-      else setUserId(data.user.id);
-    });
-  }, [router]);
+  function calculateAge(date: string) {
+    const birth = new Date(date);
+    const today = new Date();
+    let calculated = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) calculated--;
+
+    setAge(String(calculated));
+  }
 
   async function saveProfile() {
-    const { error } = await supabase.from("profiles").upsert({
-      id: userId,
-      ...form,
-      updated_at: new Date().toISOString()
+    setMessage("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("Please log in first.");
+      return;
+    }
+
+    const { error } = await supabase.from("healthcare_workers").upsert({
+      user_id: user.id,
+      email: user.email,
+      first_name: firstName,
+      surname,
+      date_of_birth: dob,
+      age: Number(age),
+      gender,
+      country,
+      profession,
+      registration_number: registrationNumber,
+      work_setting: workSetting,
+      organisation,
+      platform_access_needed: platformAccess,
     });
+
     if (error) setMessage(error.message);
-    else router.push("/dashboard");
+    else router.push("/academy");
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <div className="rounded-3xl bg-white p-8 shadow-sm">
-        <h1 className="text-3xl font-bold text-careblue">Healthcare Worker Profile</h1>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <input className="rounded-xl border p-3" placeholder="Full name" value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} />
-          <input className="rounded-xl border p-3" placeholder="Professional registration number" value={form.registration_number} onChange={e => setForm({...form, registration_number: e.target.value})} />
-          <select className="rounded-xl border p-3" value={form.country} onChange={e => setForm({...form, country: e.target.value})}>
-            {countries.map(c => <option key={c}>{c}</option>)}
+    <main className="min-h-screen bg-slate-50 flex justify-center py-12">
+      <div className="w-full max-w-3xl bg-white rounded-2xl p-8 shadow">
+        <h1 className="text-3xl font-bold text-blue-700 mb-8">
+          Healthcare Worker Profile
+        </h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input className="border p-3 rounded-xl" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          <input className="border p-3 rounded-xl" placeholder="Surname" value={surname} onChange={(e) => setSurname(e.target.value)} />
+
+          <input
+            className="border p-3 rounded-xl"
+            type="date"
+            value={dob}
+            onChange={(e) => {
+              setDob(e.target.value);
+              calculateAge(e.target.value);
+            }}
+          />
+
+          <input className="border p-3 rounded-xl bg-slate-100" placeholder="Age" value={age} readOnly />
+
+          <select className="border p-3 rounded-xl" value={gender} onChange={(e) => setGender(e.target.value)}>
+            <option value="">Select Gender</option>
+            <option>Female</option>
+            <option>Male</option>
+            <option>Other</option>
+            <option>Prefer not to say</option>
           </select>
-          <select className="rounded-xl border p-3" value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
-            {roles.map(r => <option key={r}>{r}</option>)}
+
+          <select className="border p-3 rounded-xl" value={country} onChange={(e) => setCountry(e.target.value)}>
+            <option>South Africa</option>
+            <option>England</option>
+            <option>Wales</option>
+            <option>Scotland</option>
+            <option>New Zealand</option>
           </select>
-          <input className="rounded-xl border p-3 md:col-span-2" placeholder="Organisation / pharmacy / clinic" value={form.organisation} onChange={e => setForm({...form, organisation: e.target.value})} />
-          <input className="rounded-xl border p-3 md:col-span-2" placeholder="Platform access needed" value={form.platform_access_needed} onChange={e => setForm({...form, platform_access_needed: e.target.value})} />
+
+          <select className="border p-3 rounded-xl" value={profession} onChange={(e) => setProfession(e.target.value)}>
+            <option>Doctor</option>
+            <option>Nurse</option>
+            <option>Psychologist</option>
+            <option>Pharmacist</option>
+            <option>Prescribing Pharmacist</option>
+          </select>
+
+          <input className="border p-3 rounded-xl" placeholder="Professional registration number" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} />
+
+          <select className="border p-3 rounded-xl" value={workSetting} onChange={(e) => setWorkSetting(e.target.value)}>
+            <option>Organisation</option>
+            <option>Pharmacy</option>
+            <option>Clinic</option>
+            <option>Locum</option>
+          </select>
+
+          <input className="border p-3 rounded-xl" placeholder="Organisation / Pharmacy / Clinic" value={organisation} onChange={(e) => setOrganisation(e.target.value)} />
         </div>
-        <button onClick={saveProfile} className="mt-6 rounded-xl bg-careblue px-6 py-3 font-semibold text-white">Save and continue</button>
-        {message && <p className="mt-4 text-sm text-red-600">{message}</p>}
+
+        <input
+          className="border p-3 rounded-xl w-full mt-4"
+          placeholder="Platform access needed"
+          value={platformAccess}
+          onChange={(e) => setPlatformAccess(e.target.value)}
+        />
+
+        <button onClick={saveProfile} className="mt-6 bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold">
+          Save and Continue
+        </button>
+
+        {message && <p className="text-red-600 text-sm mt-4">{message}</p>}
       </div>
     </main>
   );
