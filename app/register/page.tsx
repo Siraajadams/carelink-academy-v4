@@ -13,16 +13,27 @@ export default function RegisterPage() {
   async function register() {
     setMessage("");
 
-    const { error } = await supabase.auth.signUp({
-      email,
+    if (!email || !password) {
+      setMessage("Please enter your email and password.");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
       password,
-      options: {
-        emailRedirectTo: "https://carelink-academy-v4.vercel.app/login",
-      },
     });
 
-    if (error) setMessage(error.message);
-    else setMessage("Check your email to confirm your account, then log in.");
+    console.log("SIGNUP DATA:", data);
+    console.log("SIGNUP ERROR:", error);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage(
+      "Account created successfully. Please check your email and then login."
+    );
   }
 
   return (
@@ -35,6 +46,7 @@ export default function RegisterPage() {
         <input
           className="w-full border p-3 rounded-xl mb-3"
           placeholder="Email address"
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -47,6 +59,7 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
           <button
             type="button"
             className="border px-4 rounded-xl"
@@ -63,10 +76,17 @@ export default function RegisterPage() {
           Create Account
         </button>
 
-        {message && <p className="text-sm mt-4 text-slate-700">{message}</p>}
+        {message && (
+          <p className="text-sm mt-4 text-slate-700 break-words">
+            {message}
+          </p>
+        )}
 
         <p className="text-sm mt-5">
-          Already registered? <Link href="/login">Login</Link>
+          Already registered?{" "}
+          <Link href="/login" className="text-blue-700">
+            Login
+          </Link>
         </p>
       </div>
     </main>
