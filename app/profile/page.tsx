@@ -5,16 +5,14 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 const COURSE_OPTIONS = [
-  "CareLink Academy",
   "Videomed",
   "CPNBS",
+  "Symptom.AI",
   "Clinical Voice Transcriber",
-  "Pharmacy First",
   "Weight Management",
   "HIV Prevention Services",
-  "Travel Health",
   "Independent Prescribing",
-  "Vaccination Services",
+  "Carelink",
 ];
 
 export default function ProfilePage() {
@@ -31,9 +29,9 @@ export default function ProfilePage() {
   const [workSetting, setWorkSetting] = useState("Pharmacy");
   const [organisation, setOrganisation] = useState("");
   const [platformAccess, setPlatformAccess] = useState<string[]>([
-    "CareLink Academy",
     "Videomed",
     "CPNBS",
+    "Carelink",
   ]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -106,13 +104,9 @@ export default function ProfilePage() {
       setRegistrationNumber(data.registration_number || "");
       setWorkSetting(data.work_setting || "Pharmacy");
       setOrganisation(data.organisation || "");
-      setPlatformAccess(
-        parsePlatformAccess(data.platform_access_needed) || [
-          "CareLink Academy",
-          "Videomed",
-          "CPNBS",
-        ]
-      );
+
+      const savedAccess = parsePlatformAccess(data.platform_access_needed);
+      setPlatformAccess(savedAccess.length ? savedAccess : ["Videomed", "CPNBS", "Carelink"]);
     }
 
     setLoading(false);
@@ -172,7 +166,7 @@ export default function ProfilePage() {
       return;
     }
 
-    router.push("/academy");
+    router.push("/dashboard");
   }
 
   async function logout() {
@@ -197,7 +191,7 @@ export default function ProfilePage() {
               Healthcare Worker Profile
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Complete your profile to access CareLink Academy training modules.
+              Complete your profile to access CareLink training modules.
             </p>
           </div>
 
