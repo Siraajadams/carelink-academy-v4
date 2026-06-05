@@ -106,7 +106,7 @@ export default function LoginPage() {
 
         <p className="mt-5 text-sm">
           New user?{" "}
-          <Link className="text-blue-700" href="/signup">
+          <Link className="text-blue-700" href="/register">
             Create account
           </Link>
         </p>
