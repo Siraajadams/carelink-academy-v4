@@ -13,16 +13,22 @@ export default function LoginPage() {
   async function login() {
     setMessage("");
 
+    if (!email || !password) {
+      setMessage("Please enter your email and password.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
     if (error) {
       setMessage(error.message);
-    } else {
-      window.location.href = "/profile";
+      return;
     }
+
+    window.location.href = "/profile";
   }
 
   async function resetPassword() {
@@ -33,15 +39,18 @@ export default function LoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+    const redirectUrl = `${window.location.origin}/reset-password`;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: redirectUrl,
     });
 
     if (error) {
       setMessage(error.message);
-    } else {
-      setMessage("Password reset email sent.");
+      return;
     }
+
+    setMessage("Password reset email sent. Please check your inbox.");
   }
 
   return (
@@ -52,6 +61,8 @@ export default function LoginPage() {
         <input
           className="mt-6 w-full rounded-xl border p-3"
           placeholder="Email"
+          type="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -61,9 +72,11 @@ export default function LoginPage() {
             className="w-full rounded-xl p-3 outline-none"
             placeholder="Password"
             type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
@@ -74,6 +87,7 @@ export default function LoginPage() {
         </div>
 
         <button
+          type="button"
           onClick={login}
           className="mt-5 w-full rounded-xl bg-blue-700 p-3 font-semibold text-white"
         >
@@ -81,6 +95,7 @@ export default function LoginPage() {
         </button>
 
         <button
+          type="button"
           onClick={resetPassword}
           className="mt-3 w-full rounded-xl border p-3"
         >
