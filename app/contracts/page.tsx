@@ -33,6 +33,7 @@ export default function ContractsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [active, setActive] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   const [form, setForm] = useState({
@@ -95,16 +96,10 @@ export default function ContractsPage() {
       return;
     }
 
-    const { data: sigData, error: sigError } = await supabase
+    const { data: sigData } = await supabase
       .from("contract_signatures")
       .select("*")
       .eq("user_id", userData.user.id);
-
-    if (sigError) {
-      setMessage(sigError.message);
-      setLoading(false);
-      return;
-    }
 
     const sigMap: Record<string, Signature> = {};
 
@@ -138,26 +133,41 @@ export default function ContractsPage() {
 
   async function signContract() {
     setMessage("");
+    setSaving(true);
 
-    if (!active) return;
+    if (!active) {
+      setMessage("No contract selected.");
+      setSaving(false);
+      return;
+    }
 
     if (!userId) {
       setMessage("Please login before signing.");
+      setSaving(false);
       return;
     }
 
     if (!form.review_confirmed) {
-      setMessage("Please confirm that you have reviewed the contract first.");
+      setMessage("Please confirm that you have reviewed the contract.");
+      setSaving(false);
       return;
     }
 
     if (!form.accepted_terms) {
-      setMessage("Please tick the electronic sign-off checkbox before signing.");
+      setMessage("Please accept the electronic sign-off.");
+      setSaving(false);
       return;
     }
 
-    if (!form.signer_name || !form.signature_text) {
-      setMessage("Please enter your full name and type your signature.");
+    if (!form.signer_name.trim()) {
+      setMessage("Please enter your full name.");
+      setSaving(false);
+      return;
+    }
+
+    if (!form.signature_text.trim()) {
+      setMessage("Please type your signature.");
+      setSaving(false);
       return;
     }
 
@@ -166,11 +176,12 @@ export default function ContractsPage() {
     const payload = {
       user_id: userId,
       contract_id: active.id,
-      signer_name: form.signer_name,
-      signature_text: form.signature_text,
-      identity_or_registration_number: form.identity_or_registration_number,
-      email: form.email,
-      mobile: form.mobile,
+      signer_name: form.signer_name.trim(),
+      signature_text: form.signature_text.trim(),
+      identity_or_registration_number:
+        form.identity_or_registration_number || "",
+      email: form.email || "",
+      mobile: form.mobile || "",
       accepted: true,
       review_confirmed: true,
       review_confirmed_at: signedNow,
@@ -181,21 +192,24 @@ export default function ContractsPage() {
       signed_at: signedNow,
     };
 
-    const { error } = await supabase.from("contract_signatures").upsert(payload, {
-      onConflict: "user_id,contract_id",
-    });
+    const { data, error } = await supabase
+      .from("contract_signatures")
+      .insert(payload)
+      .select();
 
     if (error) {
-      setMessage(error.message);
+      console.error("Contract signature save error:", error);
+      setMessage(`Error saving contract: ${error.message}`);
+      setSaving(false);
       return;
     }
 
     setSignatures({
       ...signatures,
-      [active.id]: payload as any,
+      [active.id]: data?.[0] as any,
     });
 
-    setMessage("Contract reviewed, signed and date-stamped successfully.");
+    setMessage("✅ Contract signed successfully and date-stamped.");
 
     setForm((f) => ({
       ...f,
@@ -203,6 +217,8 @@ export default function ContractsPage() {
       review_confirmed: false,
       signature_text: "",
     }));
+
+    setSaving(false);
   }
 
   const isPdf = active?.contract_url?.toLowerCase().includes(".pdf");
@@ -437,12 +453,23 @@ export default function ContractsPage() {
                       </span>
                     </label>
 
-                    <button
-                      onClick={signContract}
-                      className="mt-5 rounded-xl bg-careblue px-6 py-3 font-semibold text-white"
-                    >
-                      Sign and submit
-                    </button>
+                    <div className="mt-6 rounded-2xl border bg-white p-5">
+                      <button
+                        type="button"
+                        onClick={signContract}
+                        disabled={saving}
+                        className="w-full rounded-xl bg-green-600 px-6 py-4 text-lg font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+                      >
+                        {saving
+                          ? "Saving contract sign-off..."
+                          : "✅ Submit Contract Sign-off"}
+                      </button>
+
+                      <p className="mt-3 text-xs text-slate-600">
+                        Your contract review, signature and timestamp will be
+                        stored in CareLink Academy.
+                      </p>
+                    </div>
 
                     {signatures[active.id]?.accepted && (
                       <p className="mt-4 rounded-xl bg-green-100 p-3 text-sm font-semibold text-green-700">
@@ -462,7 +489,9 @@ export default function ContractsPage() {
                     )}
 
                     {message && (
-                      <p className="mt-4 text-sm text-slate-700">{message}</p>
+                      <p className="mt-4 rounded-xl bg-white p-3 text-sm text-slate-700">
+                        {message}
+                      </p>
                     )}
                   </div>
                 </>
