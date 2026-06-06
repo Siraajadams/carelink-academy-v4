@@ -33,7 +33,6 @@ export default function ContractsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [active, setActive] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
-  const [canConfirmReview, setCanConfirmReview] = useState(false);
   const [message, setMessage] = useState("");
 
   const [form, setForm] = useState({
@@ -47,124 +46,96 @@ export default function ContractsPage() {
   });
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-
-      const { data: userData } = await supabase.auth.getUser();
-
-      if (!userData.user) {
-        setLoading(false);
-        return;
-      }
-
-      setUserId(userData.user.id);
-
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userData.user.id)
-        .single();
-
-      setProfile(p);
-
-      setForm((f) => ({
-        ...f,
-        signer_name: p?.full_name || "",
-        email: p?.email || userData.user?.email || "",
-        mobile: p?.mobile || p?.phone || "",
-        identity_or_registration_number:
-          p?.hpcsa_number ||
-          p?.registration_number ||
-          p?.identity_or_registration_number ||
-          "",
-      }));
-
-      const country = p?.country || "South Africa";
-      const role = p?.role || "Doctor";
-
-      const isSouthAfricanDoctor =
-        country.toLowerCase() === "south africa" &&
-        role.toLowerCase().includes("doctor");
-
-      if (!isSouthAfricanDoctor) {
-        setContracts([]);
-        setActive(null);
-        setMessage(
-          "No South African doctor contracts are assigned to this profile."
-        );
-        setLoading(false);
-        return;
-      }
-
-      const { data: contractData, error: contractError } = await supabase
-        .from("contracts")
-        .select("*")
-        .eq("is_active", true)
-        .or(`country.eq.Global,country.eq.${country}`)
-        .or(`role.eq.All,role.eq.${role}`)
-        .order("created_at", { ascending: false });
-
-      if (contractError) {
-        setMessage(contractError.message);
-        setLoading(false);
-        return;
-      }
-
-      const { data: sigData } = await supabase
-        .from("contract_signatures")
-        .select("*")
-        .eq("user_id", userData.user.id);
-
-      const sigMap: Record<string, Signature> = {};
-
-      sigData?.forEach((s: any) => {
-        sigMap[s.contract_id] = s;
-      });
-
-      setContracts(contractData || []);
-      setSignatures(sigMap);
-
-      if ((contractData || []).length) {
-        setActive((contractData || [])[0]);
-      }
-
-      setLoading(false);
-    }
-
     load();
   }, []);
 
-  useEffect(() => {
-    setCanConfirmReview(false);
+  async function load() {
+    setLoading(true);
+    setMessage("");
 
-    const timer = setTimeout(() => {
-      const previewBox = document.getElementById("contract-preview-box");
+    const { data: userData } = await supabase.auth.getUser();
 
-      if (!previewBox) return;
+    if (!userData.user) {
+      setMessage("Please login to view assigned contracts.");
+      setLoading(false);
+      return;
+    }
 
-      function handleScroll() {
-        const el = previewBox as HTMLElement;
-        const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+    setUserId(userData.user.id);
 
-        if (nearBottom) {
-          setCanConfirmReview(true);
-        }
-      }
+    const { data: p } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userData.user.id)
+      .single();
 
-      previewBox.addEventListener("scroll", handleScroll);
+    setProfile(p);
 
-      return () => {
-        previewBox.removeEventListener("scroll", handleScroll);
-      };
-    }, 300);
+    setForm((f) => ({
+      ...f,
+      signer_name: p?.full_name || "",
+      email: p?.email || userData.user?.email || "",
+      mobile: p?.mobile || p?.phone || "",
+      identity_or_registration_number:
+        p?.hpcsa_number ||
+        p?.registration_number ||
+        p?.identity_or_registration_number ||
+        "",
+    }));
 
-    return () => clearTimeout(timer);
-  }, [active?.id]);
+    const country = p?.country || "South Africa";
+    const role = p?.role || "Doctor";
+
+    const isSouthAfricanDoctor =
+      country.toLowerCase() === "south africa" &&
+      role.toLowerCase().includes("doctor");
+
+    if (!isSouthAfricanDoctor) {
+      setContracts([]);
+      setActive(null);
+      setMessage("No South African doctor contracts are assigned to this profile.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: contractData, error: contractError } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("is_active", true)
+      .or(`country.eq.Global,country.eq.${country}`)
+      .or(`role.eq.All,role.eq.${role}`)
+      .order("created_at", { ascending: false });
+
+    if (contractError) {
+      setMessage(contractError.message);
+      setLoading(false);
+      return;
+    }
+
+    const { data: sigData } = await supabase
+      .from("contract_signatures")
+      .select("*")
+      .eq("user_id", userData.user.id);
+
+    const sigMap: Record<string, Signature> = {};
+
+    sigData?.forEach((s: any) => {
+      sigMap[s.contract_id] = s;
+    });
+
+    setContracts(contractData || []);
+    setSignatures(sigMap);
+
+    if ((contractData || []).length) {
+      setActive((contractData || [])[0]);
+    }
+
+    setLoading(false);
+  }
 
   function selectContract(contract: Contract) {
     setActive(contract);
     setMessage("");
-    setCanConfirmReview(false);
 
     setForm((f) => ({
       ...f,
@@ -214,7 +185,7 @@ export default function ContractsPage() {
       country: profile?.country || "South Africa",
       role: profile?.role || "Doctor",
       ip_acknowledgement:
-        "User confirmed full contract review and completed electronic sign-off inside CareLink Academy.",
+        "User confirmed contract review and completed electronic sign-off inside CareLink Academy.",
       signed_at: signedNow,
     };
 
@@ -235,6 +206,8 @@ export default function ContractsPage() {
     setMessage("Contract reviewed, signed and date-stamped successfully.");
   }
 
+  const isPdf = active?.contract_url?.toLowerCase().includes(".pdf");
+
   return (
     <>
       <TopNav />
@@ -245,8 +218,8 @@ export default function ContractsPage() {
 
           <p className="mt-2 max-w-3xl text-carelight">
             Review your assigned South African doctor contract, confirm that you
-            understand it, and sign electronically. The confirmation is
-            date-stamped and stored for compliance.
+            understand it, and sign electronically. The confirmation is date-stamped
+            and stored for compliance.
           </p>
         </div>
 
@@ -269,9 +242,7 @@ export default function ContractsPage() {
 
               <div className="mt-4 space-y-3">
                 {contracts.length === 0 && (
-                  <p className="text-sm text-slate-600">
-                    No contract assigned yet.
-                  </p>
+                  <p className="text-sm text-slate-600">No contract assigned yet.</p>
                 )}
 
                 {contracts.map((c) => (
@@ -329,49 +300,43 @@ export default function ContractsPage() {
                     <a
                       href={active.contract_url}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="rounded-xl bg-careblue px-4 py-3 text-center text-sm font-semibold text-white"
                     >
                       Open contract
                     </a>
                   </div>
 
-                  <div
-                    id="contract-preview-box"
-                    className="mt-5 max-h-[650px] overflow-y-auto rounded-2xl border"
-                  >
-                    {active.contract_url?.toLowerCase().endsWith(".pdf") ? (
+                  <div className="mt-5 overflow-hidden rounded-2xl border">
+                    {isPdf ? (
                       <iframe
                         src={active.contract_url}
                         className="h-[650px] w-full"
                       />
                     ) : (
                       <div className="bg-slate-50 p-6 text-sm text-slate-700">
-                        <p className="font-semibold">Document preview</p>
+                        <p className="font-semibold">Document preview unavailable</p>
 
                         <p className="mt-2">
-                          This contract is a Word document. Click “Open
-                          contract” to review it. For production, save final
-                          contracts as PDF for browser preview.
+                          This contract is not a PDF. Please click “Open contract”
+                          to review it in a new tab before completing the sign-off.
                         </p>
 
-                        <div className="mt-8 h-[520px] rounded-xl bg-white p-5 text-slate-600">
-                          Scroll to the bottom of this box after reviewing the
-                          document externally, then complete the confirmation
-                          below.
-                        </div>
+                        <p className="mt-2 font-semibold text-red-700">
+                          Recommendation: convert this document to PDF and update the
+                          contract URL in Supabase for browser preview.
+                        </p>
                       </div>
                     )}
                   </div>
 
                   <div className="mt-6 rounded-2xl bg-carelight p-5">
-                    <h3 className="font-bold text-careblue">
-                      Electronic sign-off
-                    </h3>
+                    <h3 className="font-bold text-careblue">Electronic sign-off</h3>
 
                     <p className="mt-1 text-sm text-slate-700">
                       By signing, the healthcare worker confirms that they have
-                      reviewed the contract, understand the onboarding
-                      obligations, and accept electronic sign-off.
+                      reviewed the contract, understand the onboarding obligations,
+                      and accept electronic sign-off.
                     </p>
 
                     <div className="mt-4 rounded-xl border bg-white p-4">
@@ -379,7 +344,6 @@ export default function ContractsPage() {
                         <input
                           type="checkbox"
                           checked={form.review_confirmed}
-                          disabled={!canConfirmReview}
                           onChange={(e) =>
                             setForm({
                               ...form,
@@ -389,17 +353,10 @@ export default function ContractsPage() {
                         />
 
                         <span>
-                          I confirm that I have reviewed the full contract and
-                          understand my obligations.
+                          I confirm that I have opened and reviewed the full contract
+                          and understand my obligations.
                         </span>
                       </label>
-
-                      {!canConfirmReview && !signatures[active.id]?.accepted && (
-                        <p className="mt-2 text-xs text-slate-500">
-                          Please scroll to the bottom of the contract preview
-                          before confirming review.
-                        </p>
-                      )}
                     </div>
 
                     <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -468,8 +425,7 @@ export default function ContractsPage() {
                       />
 
                       <span>
-                        I confirm that I agree to sign this contract
-                        electronically.
+                        I confirm that I agree to sign this contract electronically.
                       </span>
                     </label>
 
