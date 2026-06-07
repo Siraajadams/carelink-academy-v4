@@ -14,10 +14,10 @@ export default function GuidePage() {
   const [confirmReview, setConfirmReview] = useState(false);
 
   const guide = {
-  id: "SA-DOCTOR-ONBOARDING-GUIDE",
-  title: "VideoMed Doctor Operations Guide",
-  url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/sign/academy-documents/guides/videomed_doctor_guide.pdf?token=xxxxxxxx",
-};
+    id: "SA-DOCTOR-ONBOARDING-GUIDE",
+    title: "VideoMed Doctor Operations Guide",
+    url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/public/academy-documents/guides/videomed_doctor_guide.pdf",
+  };
 
   useEffect(() => {
     load();
@@ -41,12 +41,17 @@ export default function GuidePage() {
 
     setProfile(p);
 
-    const { data: existing } = await supabase
+    const { data: existing, error } = await supabase
       .from("sop_reviews")
       .select("*")
       .eq("user_id", userData.user.id)
       .eq("sop_id", guide.id)
       .maybeSingle();
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
 
     if (existing) {
       setReviewed(true);
