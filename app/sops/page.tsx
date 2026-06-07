@@ -17,8 +17,12 @@ type SOP = {
 export default function SOPPage() {
   const [sops, setSops] = useState<SOP[]>([]);
   const [selectedSop, setSelectedSop] = useState<SOP | null>(null);
+  const [reviewedMap, setReviewedMap] = useState<Record<string, string>>({});
   const [reviewed, setReviewed] = useState(false);
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
+  const [confirmReview, setConfirmReview] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -31,213 +35,337 @@ export default function SOPPage() {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase
-      .from("sops")
-      .select("*")
-      .eq("is_active", true)
-      .eq("country", "South Africa")
-      .eq("role", "Doctor")
-      .order("sop_code", { ascending: true });
-
-    if (error) {
-      console.error("Error loading SOPs:", error);
-      setMessage("Unable to load SOPs. Please check Supabase table permissions.");
-    } else {
-      setSops(data || []);
-    }
-
-    setLoading(false);
-  }
-
-  async function selectSop(sop: SOP) {
-    setSelectedSop(sop);
-    setReviewed(false);
-    setReviewedAt(null);
-    setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("sop_reviews")
-      .select("reviewed_at")
-      .eq("user_id", user.id)
-      .eq("sop_id", sop.id)
-      .maybeSingle();
-
-    if (data?.reviewed_at) {
-      setReviewed(true);
-      setReviewedAt(data.reviewed_at);
-    }
-  }
-
-  async function confirmReview() {
-    if (!selectedSop) return;
-
-    setSaving(true);
-    setMessage("");
-
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
+      setMessage("Please login to review SOPs.");
+      setLoading(false);
+      return;
+    }
+
+    setUserId(user.id);
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    setProfile(profileData);
+
+    const { data: sopData, error: sopError } = await supabase
+      .from("sops")
+      .select("*")
+      .eq("is_active", true)
+      .order("sop_code", { ascending: true });
+
+    if (sopError) {
+      console.error("Error loading SOPs:", sopError);
+      setMessage(`Unable to load SOPs: ${sopError.message}`);
+      setLoading(false);
+      return;
+    }
+
+    const { data: reviewData, error: reviewError } = await supabase
+      .from("sop_reviews")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("reviewed", true);
+
+    if (reviewError) {
+      console.error("Error loading SOP reviews:", reviewError);
+    }
+
+    const reviewMap: Record<string, string> = {};
+    reviewData?.forEach((r: any) => {
+      reviewMap[r.sop_id] = r.reviewed_at;
+    });
+
+    setReviewedMap(reviewMap);
+    setSops(sopData || []);
+
+    if ((sopData || []).length > 0) {
+      await selectSop((sopData || [])[0], reviewMap);
+    }
+
+    setLoading(false);
+  }
+
+  async function selectSop(sop: SOP, existingMap?: Record<string, string>) {
+    setSelectedSop(sop);
+    setConfirmReview(false);
+    setMessage("");
+
+    const mapToUse = existingMap || reviewedMap;
+
+    if (mapToUse[sop.id]) {
+      setReviewed(true);
+      setReviewedAt(mapToUse[sop.id]);
+    } else {
+      setReviewed(false);
+      setReviewedAt(null);
+    }
+  }
+
+  async function confirmSOPReview() {
+    if (!selectedSop) return;
+
+    setSaving(true);
+    setMessage("");
+
+    if (!userId) {
       setMessage("You must be logged in to confirm SOP review.");
+      setSaving(false);
+      return;
+    }
+
+    if (!confirmReview) {
+      setMessage("Please tick the confirmation checkbox before submitting.");
       setSaving(false);
       return;
     }
 
     const now = new Date().toISOString();
 
-    const { error } = await supabase.from("sop_reviews").upsert(
-      {
-        user_id: user.id,
-        sop_id: selectedSop.id,
-        reviewed_at: now,
-      },
-      {
-        onConflict: "user_id,sop_id",
-      }
-    );
+    const payload = {
+      user_id: userId,
+      sop_id: selectedSop.id,
+      reviewed: true,
+      reviewed_at: now,
+      profile_snapshot: JSON.stringify({
+        full_name: profile?.full_name || "",
+        email: profile?.email || "",
+        role: profile?.role || "Doctor",
+        country: profile?.country || "South Africa",
+        sop_code: selectedSop.sop_code,
+        title: selectedSop.title,
+      }),
+    };
+
+    const { data, error } = await supabase
+      .from("sop_reviews")
+      .insert(payload)
+      .select();
 
     if (error) {
       console.error("Error saving SOP review:", error);
-      setMessage("Could not save review. Check sop_reviews table and RLS policy.");
-    } else {
-      setReviewed(true);
-      setReviewedAt(now);
-      setMessage("SOP review recorded successfully.");
+      setMessage(`Could not save review: ${error.message}`);
+      setSaving(false);
+      return;
     }
 
+    setReviewed(true);
+    setReviewedAt(now);
+    setReviewedMap({
+      ...reviewedMap,
+      [selectedSop.id]: now,
+    });
+
+    setMessage("✅ SOP review recorded successfully and date-stamped.");
     setSaving(false);
   }
+
+  const reviewedCount = Object.keys(reviewedMap).filter((id) =>
+    sops.some((s) => s.id === id)
+  ).length;
 
   return (
     <>
       <TopNav />
 
-      <div style={{ padding: "30px" }}>
-        <h1>Standard Operating Procedures</h1>
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <div className="rounded-3xl bg-careblue p-8 text-white">
+          <h1 className="text-3xl font-bold">Standard Operating Procedures</h1>
+          <p className="mt-2 max-w-3xl text-carelight">
+            Review each South African doctor SOP and submit a confirmation. Each
+            confirmation is date-stamped and stored in CareLink Academy.
+          </p>
+        </div>
 
         {message && (
-          <p
-            style={{
-              padding: "12px",
-              background: "#f5f5f5",
-              borderRadius: "8px",
-              marginTop: "15px",
-            }}
-          >
+          <p className="mt-6 rounded-2xl bg-yellow-50 p-4 text-sm text-yellow-800">
             {message}
           </p>
         )}
 
         {loading ? (
-          <p>Loading SOPs...</p>
+          <p className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+            Loading SOPs...
+          </p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "350px 1fr",
-              gap: "20px",
-              marginTop: "20px",
-            }}
-          >
-            <div>
-              {sops.length === 0 && (
-                <p>No SOPs found. Please add SOP records in Supabase.</p>
-              )}
+          <>
+            <section className="mt-8 grid gap-5 md:grid-cols-3">
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Assigned SOPs</p>
+                <h2 className="mt-2 text-2xl font-bold">{sops.length}</h2>
+              </div>
 
-              {sops.map((sop) => (
-                <div
-                  key={sop.id}
-                  onClick={() => selectSop(sop)}
-                  style={{
-                    padding: "12px",
-                    border:
-                      selectedSop?.id === sop.id
-                        ? "2px solid #4052b8"
-                        : "1px solid #ddd",
-                    marginBottom: "10px",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    background:
-                      selectedSop?.id === sop.id ? "#f0f2ff" : "#ffffff",
-                  }}
-                >
-                  <strong>{sop.sop_code}</strong>
-                  <br />
-                  {sop.title}
-                </div>
-              ))}
-            </div>
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Reviewed</p>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {reviewedCount}/{sops.length}
+                </h2>
+              </div>
 
-            <div>
-              {selectedSop ? (
-                <>
-                  <h2>{selectedSop.title}</h2>
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Progress</p>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {sops.length > 0
+                    ? Math.round((reviewedCount / sops.length) * 100)
+                    : 0}
+                  %
+                </h2>
+              </div>
+            </section>
 
-                  <iframe
-                    src={selectedSop.sop_url}
-                    width="100%"
-                    height="750"
-                    style={{
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                    }}
-                  />
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              <section className="rounded-3xl bg-white p-5 shadow-sm">
+                <h2 className="text-lg font-bold">Assigned SOPs</h2>
 
-                  <p style={{ marginTop: "15px" }}>
-                    Please scroll through and review the full SOP before confirming.
-                  </p>
-
-                  {!reviewed && (
-                    <button
-                      onClick={confirmReview}
-                      disabled={saving}
-                      style={{
-                        marginTop: "10px",
-                        padding: "12px 20px",
-                        background: "#4052b8",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: saving ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {saving ? "Saving..." : "Confirm I Have Reviewed This SOP"}
-                    </button>
-                  )}
-
-                  {reviewed && (
-                    <p
-                      style={{
-                        marginTop: "20px",
-                        color: "green",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      ✓ SOP reviewed successfully
-                      {reviewedAt && (
-                        <>
-                          <br />
-                          Reviewed on: {new Date(reviewedAt).toLocaleString()}
-                        </>
-                      )}
+                <div className="mt-4 space-y-3">
+                  {sops.length === 0 && (
+                    <p className="text-sm text-slate-600">
+                      No SOPs found. Please add SOP records in Supabase.
                     </p>
                   )}
-                </>
-              ) : (
-                <p>Select an SOP to review.</p>
-              )}
+
+                  {sops.map((sop) => (
+                    <button
+                      key={sop.id}
+                      onClick={() => selectSop(sop)}
+                      className={`w-full rounded-2xl border p-4 text-left ${
+                        selectedSop?.id === sop.id
+                          ? "border-careblue bg-carelight"
+                          : ""
+                      }`}
+                    >
+                      <p className="font-bold">{sop.sop_code}</p>
+                      <p className="text-sm text-slate-700">{sop.title}</p>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {reviewedMap[sop.id]
+                          ? "Reviewed and date-stamped"
+                          : "Awaiting review"}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-3xl bg-white p-5 shadow-sm md:col-span-2">
+                {selectedSop ? (
+                  <>
+                    <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                      <div>
+                        <h2 className="text-2xl font-bold text-careblue">
+                          {selectedSop.title}
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {selectedSop.sop_code} · {selectedSop.role} ·{" "}
+                          {selectedSop.country}
+                        </p>
+                      </div>
+
+                      <a
+                        href={selectedSop.sop_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-xl bg-careblue px-4 py-3 text-center text-sm font-semibold text-white"
+                      >
+                        Open SOP
+                      </a>
+                    </div>
+
+                    <div className="mt-5 overflow-hidden rounded-2xl border">
+                      {selectedSop.sop_url?.startsWith("http") ? (
+                        <iframe
+                          src={`${selectedSop.sop_url}#toolbar=1&navpanes=0`}
+                          className="h-[750px] w-full"
+                          title={selectedSop.title}
+                        />
+                      ) : (
+                        <div className="bg-slate-50 p-6 text-sm text-slate-700">
+                          <p className="font-semibold">
+                            SOP document URL not configured correctly.
+                          </p>
+                          <p className="mt-2">
+                            Please update the <strong>sop_url</strong> field in
+                            Supabase with the full PDF URL.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6 rounded-2xl bg-carelight p-5">
+                      <h3 className="font-bold text-careblue">
+                        SOP Review Confirmation
+                      </h3>
+
+                      <p className="mt-1 text-sm text-slate-700">
+                        Please review the full SOP before submitting your
+                        confirmation.
+                      </p>
+
+                      {!reviewed && (
+                        <>
+                          <label className="mt-4 flex gap-3 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={confirmReview}
+                              onChange={(e) =>
+                                setConfirmReview(e.target.checked)
+                              }
+                            />
+                            <span>
+                              I confirm that I have reviewed and understood this
+                              SOP.
+                            </span>
+                          </label>
+
+                          <div className="mt-6 rounded-2xl border bg-white p-5">
+                            <button
+                              type="button"
+                              onClick={confirmSOPReview}
+                              disabled={saving}
+                              className="w-full rounded-xl bg-green-600 px-6 py-4 text-lg font-bold text-white shadow-sm disabled:opacity-60"
+                            >
+                              {saving
+                                ? "Saving SOP review..."
+                                : "✅ Submit SOP Review"}
+                            </button>
+
+                            <p className="mt-3 text-xs text-slate-600">
+                              Your SOP review and timestamp will be stored in
+                              CareLink Academy.
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      {reviewed && (
+                        <p className="mt-4 rounded-xl bg-green-100 p-3 text-sm font-semibold text-green-700">
+                          ✓ SOP reviewed successfully
+                          {reviewedAt && (
+                            <>
+                              <br />
+                              Reviewed on:{" "}
+                              {new Date(reviewedAt).toLocaleString()}
+                            </>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p>Select an SOP to review.</p>
+                )}
+              </section>
             </div>
-          </div>
+          </>
         )}
-      </div>
+      </main>
     </>
   );
 }
