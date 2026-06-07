@@ -135,6 +135,8 @@ export default function SOPPage() {
       {
         user_id: userId,
         sop_id: selectedSop.id,
+        sop_title: selectedSop.title,
+        sop_code: selectedSop.sop_code,
         reviewed: true,
         reviewed_at: now,
       },
