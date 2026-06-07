@@ -15,8 +15,9 @@ export default function GuidePage() {
 
   const guide = {
     id: "SA-DOCTOR-ONBOARDING-GUIDE",
+    code: "SA-DOCTOR-ONBOARDING-GUIDE",
     title: "VideoMed Doctor Operations Guide",
-    url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/sign/academy-documents/contracts/guides/videomed_doctor_guide.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NDA1MmEwOC05Y2Q0LTQzNWEtODQ5Yi04MWUyNTFjNTMwZDMiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhY2FkZW15LWRvY3VtZW50cy9jb250cmFjdHMvZ3VpZGVzL3ZpZGVvbWVkX2RvY3Rvcl9ndWlkZS5wZGYiLCJpYXQiOjE3ODA4MjY1MjEsImV4cCI6MTgxMjM2MjUyMX0.9UjhtUaTZqYq1ej63W7G-JCe2YRJRvb0PFijbc0By-g",
+    url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/public/academy-documents/contracts/guides/videomed_doctor_guide.pdf",
   };
 
   useEffect(() => {
@@ -24,19 +25,24 @@ export default function GuidePage() {
   }, []);
 
   async function load() {
-    const { data: userData } = await supabase.auth.getUser();
+    setMessage("");
 
-    if (!userData.user) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
       setMessage("Please login to review the onboarding guide.");
       return;
     }
 
-    setUserId(userData.user.id);
+    setUserId(user.id);
 
     const { data: p } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", userData.user.id)
+      .eq("id", user.id)
       .maybeSingle();
 
     setProfile(p);
@@ -44,7 +50,7 @@ export default function GuidePage() {
     const { data: existing, error } = await supabase
       .from("sop_reviews")
       .select("*")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", user.id)
       .eq("sop_id", guide.id)
       .maybeSingle();
 
@@ -74,32 +80,31 @@ export default function GuidePage() {
 
     setSaving(true);
 
-    const payload = {
-      user_id: userId,
-      sop_id: guide.id,
-      reviewed: true,
-      reviewed_at: new Date().toISOString(),
-      profile_snapshot: JSON.stringify({
-        full_name: profile?.full_name || "",
-        email: profile?.email || "",
-        role: profile?.role || "Doctor",
-        country: profile?.country || "South Africa",
-        document: guide.title,
-      }),
-    };
+    const now = new Date().toISOString();
 
-    const { error } = await supabase.from("sop_reviews").upsert(payload, {
-      onConflict: "user_id,sop_id",
-    });
+    const { error } = await supabase.from("sop_reviews").upsert(
+      {
+        user_id: userId,
+        sop_id: guide.id,
+        sop_title: guide.title,
+        sop_code: guide.code,
+        reviewed: true,
+        reviewed_at: now,
+      },
+      {
+        onConflict: "user_id,sop_id",
+      }
+    );
 
     if (error) {
-      setMessage(error.message);
+      setMessage(`Could not save guide review: ${error.message}`);
       setSaving(false);
       return;
     }
 
     setReviewed(true);
-    setReviewedAt(new Date().toLocaleString());
+    setReviewedAt(new Date(now).toLocaleString());
+    setConfirmReview(false);
     setMessage("✅ Onboarding guide reviewed and date-stamped.");
     setSaving(false);
   }
@@ -147,7 +152,7 @@ export default function GuidePage() {
 
           <div className="mt-5 overflow-hidden rounded-2xl border">
             <iframe
-              src={guide.url}
+              src={`${guide.url}#toolbar=1&navpanes=0`}
               className="h-[700px] w-full"
               title="VideoMed Doctor Operations Guide"
             />
@@ -163,41 +168,43 @@ export default function GuidePage() {
               onboarding process, platform requirements and operational guide.
             </p>
 
-            <label className="mt-4 flex gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={confirmReview}
-                onChange={(e) => setConfirmReview(e.target.checked)}
-              />
-              <span>
-                I confirm that I have reviewed the VideoMed Doctor Operations
-                Guide.
-              </span>
-            </label>
+            {!reviewed && (
+              <>
+                <label className="mt-4 flex gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={confirmReview}
+                    onChange={(e) => setConfirmReview(e.target.checked)}
+                  />
+                  <span>
+                    I confirm that I have reviewed the VideoMed Doctor
+                    Operations Guide.
+                  </span>
+                </label>
 
-            <div className="mt-6 rounded-2xl border bg-white p-5">
-              <button
-                type="button"
-                onClick={submitGuideReview}
-                disabled={saving || reviewed}
-                className="w-full rounded-xl bg-green-600 px-6 py-4 text-lg font-bold text-white shadow-sm disabled:opacity-60"
-              >
-                {reviewed
-                  ? "✅ Guide Already Reviewed"
-                  : saving
-                  ? "Saving guide review..."
-                  : "✅ Submit Guide Review"}
-              </button>
+                <div className="mt-6 rounded-2xl border bg-white p-5">
+                  <button
+                    type="button"
+                    onClick={submitGuideReview}
+                    disabled={saving}
+                    className="w-full rounded-xl bg-green-600 px-6 py-4 text-lg font-bold text-white shadow-sm disabled:opacity-60"
+                  >
+                    {saving
+                      ? "Saving guide review..."
+                      : "✅ Submit Guide Review"}
+                  </button>
 
-              <p className="mt-3 text-xs text-slate-600">
-                Your guide confirmation and timestamp will be stored in CareLink
-                Academy.
-              </p>
-            </div>
+                  <p className="mt-3 text-xs text-slate-600">
+                    Your guide confirmation and timestamp will be stored in
+                    CareLink Academy.
+                  </p>
+                </div>
+              </>
+            )}
 
             {reviewed && (
               <p className="mt-4 rounded-xl bg-green-100 p-3 text-sm font-semibold text-green-700">
-                Guide reviewed on {reviewedAt}.
+                ✅ Guide reviewed on {reviewedAt}.
               </p>
             )}
           </div>
