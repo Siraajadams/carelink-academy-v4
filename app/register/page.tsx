@@ -28,15 +28,26 @@ export default function RegisterPage() {
       return;
     }
 
-    setMessage("Check your email to confirm your account, then complete your profile.");
+    setMessage(
+      "Check your email to confirm your account, then complete your profile."
+    );
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow">
-        <h1 className="text-2xl font-bold text-blue-700 mb-6">
+        <Link href="/" className="mb-5 inline-block text-sm text-blue-700">
+          ← Back to CareLink Academy
+        </Link>
+
+        <h1 className="text-2xl font-bold text-blue-700 mb-2">
           Healthcare Worker Registration
         </h1>
+
+        <p className="mb-6 text-sm text-slate-600">
+          Create your account to access CareLink Academy onboarding, contracts,
+          guides, SOPs and reports.
+        </p>
 
         <input
           className="w-full border p-3 rounded-xl mb-3"
