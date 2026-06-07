@@ -5,173 +5,273 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import TopNav from "@/components/TopNav";
 
+type Profile = {
+  id: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
+  country?: string;
+};
+
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<any>(null);
-  const [platforms, setPlatforms] = useState<string[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [contractsSigned, setContractsSigned] = useState(0);
+  const [totalContracts, setTotalContracts] = useState(0);
+  const [guideReviewed, setGuideReviewed] = useState(false);
+  const [guideReviewedAt, setGuideReviewedAt] = useState("");
   const [sopsCompleted, setSopsCompleted] = useState(0);
   const [totalSops, setTotalSops] = useState(0);
-  const [assessmentScore, setAssessmentScore] = useState(0);
+  const [overallProgress, setOverallProgress] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  const guideId = "SA-DOCTOR-ONBOARDING-GUIDE";
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
   async function loadDashboard() {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    setLoading(true);
+    setMessage("");
 
-      if (!user) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      setProfile(profileData);
-
-      if (profileData?.platform_access) {
-        setPlatforms(profileData.platform_access);
-      }
-
-      const { data: contracts } = await supabase
-        .from("signed_contracts")
-        .select("*")
-        .eq("user_id", user.id);
-
-      setContractsSigned(contracts?.length || 0);
-
-      const { data: allSops } = await supabase
-        .from("sops")
-        .select("*")
-        .eq("is_active", true);
-
-      setTotalSops(allSops?.length || 0);
-
-      const { data: reviewedSops } = await supabase
-        .from("sop_reviews")
-        .select("*")
-        .eq("user_id", user.id);
-
-      setSopsCompleted(reviewedSops?.length || 0);
-
-      const { data: assessments } = await supabase
-        .from("assessment_results")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (assessments?.length) {
-        setAssessmentScore(assessments[0].score || 0);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
+    if (!user) {
+      setMessage("Please login to view your dashboard.");
       setLoading(false);
+      return;
     }
-  }
 
-  const complianceScore = Math.round(
-    (contractsSigned > 0 ? 30 : 0) +
-      (totalSops > 0 ? (sopsCompleted / totalSops) * 40 : 0) +
-      ((assessmentScore || 0) / 100) * 30
-  );
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
 
-  if (loading) {
-    return (
-      <>
-        <TopNav />
-        <div className="p-10">Loading dashboard...</div>
-      </>
+    const userProfile = profileData || {
+      id: user.id,
+      email: user.email || "",
+      role: "Doctor",
+      country: "South Africa",
+    };
+
+    setProfile(userProfile);
+
+    const role = userProfile?.role || "Doctor";
+    const country = userProfile?.country || "South Africa";
+
+    const { count: contractTotal } = await supabase
+      .from("contracts")
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true);
+
+    const { count: contractSignedCount } = await supabase
+      .from("contract_signatures")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("accepted", true);
+
+    const { data: guideReview } = await supabase
+      .from("sop_reviews")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("sop_id", guideId)
+      .maybeSingle();
+
+    const { count: sopTotalCount } = await supabase
+      .from("sops")
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true)
+      .or(`country.eq.${country},country.eq.Global`);
+
+    const { count: sopReviewedCount } = await supabase
+      .from("sop_reviews")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("reviewed", true)
+      .neq("sop_id", guideId);
+
+    const contractsDone = contractSignedCount || 0;
+    const contractsTotal = contractTotal || 0;
+    const sopsDone = sopReviewedCount || 0;
+    const sopsTotal = sopTotalCount || 0;
+    const guideDone = !!guideReview;
+
+    setTotalContracts(contractsTotal);
+    setContractsSigned(contractsDone);
+    setGuideReviewed(guideDone);
+    setGuideReviewedAt(
+      guideReview?.reviewed_at
+        ? new Date(guideReview.reviewed_at).toLocaleString()
+        : ""
     );
+    setTotalSops(sopsTotal);
+    setSopsCompleted(sopsDone);
+
+    const totalSteps = contractsTotal + sopsTotal + 1;
+    const completedSteps = contractsDone + sopsDone + (guideDone ? 1 : 0);
+
+    setOverallProgress(
+      totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
+    );
+
+    setLoading(false);
   }
 
   return (
     <>
       <TopNav />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-8 rounded-3xl bg-careblue p-8 text-white">
-          <h1 className="text-3xl font-bold">
-            Welcome {profile?.first_name || profile?.full_name || "Healthcare Practitioner"}
-          </h1>
-          <p className="mt-2 opacity-90">
-            CareLink Academy Practitioner Onboarding Portal
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <div className="rounded-3xl bg-careblue p-8 text-white">
+          <h1 className="text-3xl font-bold">CareLink Academy Dashboard</h1>
+          <p className="mt-2 text-carelight">
+            Track your onboarding progress, contracts, guide review and SOP
+            completion.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-5">
-          <DashboardCard title="Platforms Selected" value={platforms.length} />
-          <DashboardCard title="Contracts Signed" value={contractsSigned} />
-          <DashboardCard title="SOP Progress" value={`${sopsCompleted}/${totalSops}`} />
-          <DashboardCard title="Assessment Score" value={`${assessmentScore}%`} />
-          <DashboardCard title="Compliance" value={`${complianceScore}%`} />
-        </div>
+        {loading && (
+          <p className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+            Loading dashboard...
+          </p>
+        )}
 
-        <div className="mt-10 rounded-3xl bg-white p-6 shadow">
-          <h2 className="mb-4 text-2xl font-bold">My Selected Platforms</h2>
+        {!loading && message && (
+          <p className="mt-6 rounded-2xl bg-yellow-50 p-5 text-yellow-800">
+            {message}
+          </p>
+        )}
 
-          {platforms.length === 0 ? (
-            <p>No platform access selected.</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {platforms.map((platform) => (
-                <div key={platform} className="rounded-2xl border p-5">
-                  <h3 className="text-xl font-semibold">{platform}</h3>
-                  <p className="mt-2 text-gray-600">
-                    Introduction, training videos, onboarding steps and registration.
-                  </p>
-                  <Link
-                    href={`/academy/${encodeURIComponent(platform)}`}
-                    className="mt-4 inline-block rounded-xl bg-careblue px-4 py-2 text-white"
-                  >
-                    Open Course
-                  </Link>
+        {!loading && (
+          <>
+            <section className="mt-8 grid gap-5 md:grid-cols-4">
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Profile</p>
+                <h2 className="mt-2 text-xl font-bold">
+                  {profile?.full_name || "Not completed"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {profile?.role || "Doctor"} ·{" "}
+                  {profile?.country || "South Africa"}
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Contracts</p>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {contractsSigned}/{totalContracts}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Signed contracts
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Guide</p>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {guideReviewed ? "Done" : "Pending"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Doctor onboarding guide
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">Overall Progress</p>
+                <h2 className="mt-2 text-2xl font-bold">{overallProgress}%</h2>
+                <div className="mt-3 h-3 rounded-full bg-slate-200">
+                  <div
+                    className="h-3 rounded-full bg-careblue"
+                    style={{ width: `${overallProgress}%` }}
+                  />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            </section>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-5">
-          <NavCard href="/learning" title="Learning" text="Platform training modules" />
-          <NavCard href="/contracts" title="Contracts" text="Review & sign agreements" />
-          <NavCard href="/guide" title="Doctor Guide" text="Doctor onboarding guide" />
-          <NavCard href="/sops" title="SOPs" text="Review required SOPs" />
-          <NavCard href="/report" title="Report" text="Progress & compliance" />
-        </div>
+            <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-careblue">
+                My Selected Platforms
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Current onboarding pathway: VideoMed South African Doctor.
+              </p>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-4">
+                <Link
+                  href="/learning"
+                  className="rounded-2xl border p-5 text-center hover:bg-carelight"
+                >
+                  <p className="font-bold">Learning</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Complete platform modules
+                  </p>
+                </Link>
+
+                <Link
+                  href="/contracts"
+                  className="rounded-2xl border p-5 text-center hover:bg-carelight"
+                >
+                  <p className="font-bold">Contracts</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {contractsSigned}/{totalContracts} signed
+                  </p>
+                </Link>
+
+                <Link
+                  href="/guide"
+                  className="rounded-2xl border p-5 text-center hover:bg-carelight"
+                >
+                  <p className="font-bold">Doctor Guide</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {guideReviewed ? "Reviewed" : "Pending review"}
+                  </p>
+                </Link>
+
+                <Link
+                  href="/report"
+                  className="rounded-2xl border p-5 text-center hover:bg-carelight"
+                >
+                  <p className="font-bold">Report</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    View onboarding status
+                  </p>
+                </Link>
+              </div>
+            </section>
+
+            <section className="mt-8 grid gap-5 md:grid-cols-3">
+              <div className="rounded-3xl bg-white p-6 shadow-sm">
+                <h3 className="font-bold text-careblue">Contract Sign-off</h3>
+                <p className="mt-2 text-sm">
+                  {contractsSigned > 0
+                    ? `${contractsSigned} contract signed.`
+                    : "No contract signed yet."}
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-white p-6 shadow-sm">
+                <h3 className="font-bold text-careblue">Onboarding Guide</h3>
+                <p className="mt-2 text-sm">
+                  {guideReviewed
+                    ? `Reviewed on ${guideReviewedAt}`
+                    : "Guide not reviewed yet."}
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-white p-6 shadow-sm">
+                <h3 className="font-bold text-careblue">SOP Reviews</h3>
+                <p className="mt-2 text-sm">
+                  {sopsCompleted}/{totalSops} SOPs reviewed.
+                </p>
+              </div>
+            </section>
+          </>
+        )}
       </main>
     </>
-  );
-}
-
-function DashboardCard({ title, value }: { title: string; value: any }) {
-  return (
-    <div className="rounded-2xl bg-white p-5 shadow">
-      <h3 className="text-sm text-gray-500">{title}</h3>
-      <p className="mt-2 text-3xl font-bold">{value}</p>
-    </div>
-  );
-}
-
-function NavCard({
-  href,
-  title,
-  text,
-}: {
-  href: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <Link href={href} className="rounded-2xl border p-6 text-center hover:bg-gray-50">
-      <h3 className="font-bold">{title}</h3>
-      <p className="mt-2 text-sm">{text}</p>
-    </Link>
   );
 }
