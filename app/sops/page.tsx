@@ -56,28 +56,29 @@ export default function SOPPage() {
 
     setProfile(profileData);
 
+    const role = profileData?.role || "Doctor";
+    const country = profileData?.country || "South Africa";
+
     const { data: sopData, error: sopError } = await supabase
       .from("sops")
       .select("*")
       .eq("is_active", true)
+      .eq("country", country)
+      .eq("role", role)
+      .neq("sop_code", "SA-DOCTOR-ONBOARDING-GUIDE")
       .order("sop_code", { ascending: true });
 
     if (sopError) {
-      console.error("Error loading SOPs:", sopError);
       setMessage(`Unable to load SOPs: ${sopError.message}`);
       setLoading(false);
       return;
     }
 
-    const { data: reviewData, error: reviewError } = await supabase
+    const { data: reviewData } = await supabase
       .from("sop_reviews")
-      .select("*")
+      .select("sop_id, reviewed_at")
       .eq("user_id", user.id)
       .eq("reviewed", true);
-
-    if (reviewError) {
-      console.error("Error loading SOP reviews:", reviewError);
-    }
 
     const reviewMap: Record<string, string> = {};
     reviewData?.forEach((r: any) => {
@@ -88,13 +89,13 @@ export default function SOPPage() {
     setSops(sopData || []);
 
     if ((sopData || []).length > 0) {
-      await selectSop((sopData || [])[0], reviewMap);
+      selectSop((sopData || [])[0], reviewMap);
     }
 
     setLoading(false);
   }
 
-  async function selectSop(sop: SOP, existingMap?: Record<string, string>) {
+  function selectSop(sop: SOP, existingMap?: Record<string, string>) {
     setSelectedSop(sop);
     setConfirmReview(false);
     setMessage("");
@@ -130,40 +131,33 @@ export default function SOPPage() {
 
     const now = new Date().toISOString();
 
-    const payload = {
-      user_id: userId,
-      sop_id: selectedSop.id,
-      reviewed: true,
-      reviewed_at: now,
-      profile_snapshot: JSON.stringify({
-        full_name: profile?.full_name || "",
-        email: profile?.email || "",
-        role: profile?.role || "Doctor",
-        country: profile?.country || "South Africa",
-        sop_code: selectedSop.sop_code,
-        title: selectedSop.title,
-      }),
-    };
-
-    const { data, error } = await supabase
-      .from("sop_reviews")
-      .insert(payload)
-      .select();
+    const { error } = await supabase.from("sop_reviews").upsert(
+      {
+        user_id: userId,
+        sop_id: selectedSop.id,
+        reviewed: true,
+        reviewed_at: now,
+      },
+      {
+        onConflict: "user_id,sop_id",
+      }
+    );
 
     if (error) {
-      console.error("Error saving SOP review:", error);
       setMessage(`Could not save review: ${error.message}`);
       setSaving(false);
       return;
     }
 
-    setReviewed(true);
-    setReviewedAt(now);
-    setReviewedMap({
+    const updatedMap = {
       ...reviewedMap,
       [selectedSop.id]: now,
-    });
+    };
 
+    setReviewed(true);
+    setReviewedAt(now);
+    setReviewedMap(updatedMap);
+    setConfirmReview(false);
     setMessage("✅ SOP review recorded successfully and date-stamped.");
     setSaving(false);
   }
@@ -171,6 +165,9 @@ export default function SOPPage() {
   const reviewedCount = Object.keys(reviewedMap).filter((id) =>
     sops.some((s) => s.id === id)
   ).length;
+
+  const progress =
+    sops.length > 0 ? Math.round((reviewedCount / sops.length) * 100) : 0;
 
   return (
     <>
@@ -212,12 +209,7 @@ export default function SOPPage() {
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">
                 <p className="text-sm text-slate-500">Progress</p>
-                <h2 className="mt-2 text-2xl font-bold">
-                  {sops.length > 0
-                    ? Math.round((reviewedCount / sops.length) * 100)
-                    : 0}
-                  %
-                </h2>
+                <h2 className="mt-2 text-2xl font-bold">{progress}%</h2>
               </div>
             </section>
 
@@ -228,7 +220,7 @@ export default function SOPPage() {
                 <div className="mt-4 space-y-3">
                   {sops.length === 0 && (
                     <p className="text-sm text-slate-600">
-                      No SOPs found. Please add SOP records in Supabase.
+                      No SOPs found. Please check the SOP records in Supabase.
                     </p>
                   )}
 
@@ -246,7 +238,9 @@ export default function SOPPage() {
                       <p className="text-sm text-slate-700">{sop.title}</p>
                       <p className="mt-1 text-xs text-slate-600">
                         {reviewedMap[sop.id]
-                          ? "Reviewed and date-stamped"
+                          ? `Reviewed on ${new Date(
+                              reviewedMap[sop.id]
+                            ).toLocaleString()}`
                           : "Awaiting review"}
                       </p>
                     </button>
@@ -292,7 +286,7 @@ export default function SOPPage() {
                           </p>
                           <p className="mt-2">
                             Please update the <strong>sop_url</strong> field in
-                            Supabase with the full PDF URL.
+                            Supabase with the full public PDF URL.
                           </p>
                         </div>
                       )}
