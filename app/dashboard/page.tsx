@@ -60,7 +60,6 @@ export default function DashboardPage() {
 
     setProfile(userProfile);
 
-    const role = userProfile?.role || "Doctor";
     const country = userProfile?.country || "South Africa";
 
     const { count: contractTotal } = await supabase
@@ -85,7 +84,8 @@ export default function DashboardPage() {
       .from("sops")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true)
-      .or(`country.eq.${country},country.eq.Global`);
+      .or(`country.eq.${country},country.eq.Global`)
+      .neq("sop_code", guideId);
 
     const { count: sopReviewedCount } = await supabase
       .from("sop_reviews")
@@ -148,7 +148,7 @@ export default function DashboardPage() {
 
         {!loading && (
           <>
-            <section className="mt-8 grid gap-5 md:grid-cols-4">
+            <section className="mt-8 grid gap-5 md:grid-cols-5">
               <div className="rounded-3xl bg-white p-5 shadow-sm">
                 <p className="text-sm text-slate-500">Profile</p>
                 <h2 className="mt-2 text-xl font-bold">
@@ -165,9 +165,7 @@ export default function DashboardPage() {
                 <h2 className="mt-2 text-2xl font-bold">
                   {contractsSigned}/{totalContracts}
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Signed contracts
-                </p>
+                <p className="mt-1 text-sm text-slate-600">Signed contracts</p>
               </div>
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">
@@ -178,6 +176,14 @@ export default function DashboardPage() {
                 <p className="mt-1 text-sm text-slate-600">
                   Doctor onboarding guide
                 </p>
+              </div>
+
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">SOPs</p>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {sopsCompleted}/{totalSops}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">SOP reviews</p>
               </div>
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">
@@ -200,7 +206,7 @@ export default function DashboardPage() {
                 Current onboarding pathway: VideoMed South African Doctor.
               </p>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-4">
+              <div className="mt-6 grid gap-4 md:grid-cols-5">
                 <Link
                   href="/learning"
                   className="rounded-2xl border p-5 text-center hover:bg-carelight"
@@ -228,6 +234,16 @@ export default function DashboardPage() {
                   <p className="font-bold">Doctor Guide</p>
                   <p className="mt-1 text-sm text-slate-600">
                     {guideReviewed ? "Reviewed" : "Pending review"}
+                  </p>
+                </Link>
+
+                <Link
+                  href="/sops"
+                  className="rounded-2xl border p-5 text-center hover:bg-carelight"
+                >
+                  <p className="font-bold">SOPs</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {sopsCompleted}/{totalSops} reviewed
                   </p>
                 </Link>
 
