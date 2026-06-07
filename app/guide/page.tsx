@@ -16,7 +16,7 @@ export default function GuidePage() {
   const guide = {
     id: "SA-DOCTOR-ONBOARDING-GUIDE",
     title: "VideoMed Doctor Operations Guide",
-    url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/public/academy-documents/guides/videomed_doctor_guide.pdf",
+    url: url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/public/academy-documents/guides/videomed_doctor_guide.pdf",
   };
 
   useEffect(() => {
