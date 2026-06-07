@@ -16,7 +16,7 @@ export default function GuidePage() {
   const guide = {
     id: "SA-DOCTOR-ONBOARDING-GUIDE",
     title: "VideoMed Doctor Operations Guide",
-    url: "https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/public/academy-documents/guides/videomed_doctor_guide.pdf",
+    url: "chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://otrhruramqmnurmdlppj.supabase.co/storage/v1/object/sign/academy-documents/contracts/guides/videomed_doctor_guide.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NDA1MmEwOC05Y2Q0LTQzNWEtODQ5Yi04MWUyNTFjNTMwZDMiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhY2FkZW15LWRvY3VtZW50cy9jb250cmFjdHMvZ3VpZGVzL3ZpZGVvbWVkX2RvY3Rvcl9ndWlkZS5wZGYiLCJpYXQiOjE3ODA4MTg3NjEsImV4cCI6MTgxMjM1NDc2MX0.XAUol_YePXuUumpn-aI9HHaz_T_gN1aiQldGU-ov8kI",
   };
 
   useEffect(() => {
