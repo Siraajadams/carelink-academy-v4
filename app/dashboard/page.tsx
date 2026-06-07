@@ -30,7 +30,7 @@ export default function DashboardPage() {
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       setProfile(profileData);
 
@@ -45,17 +45,19 @@ export default function DashboardPage() {
 
       setContractsSigned(contracts?.length || 0);
 
-      const { data: sops } = await supabase
-        .from("sop_progress")
+      const { data: allSops } = await supabase
+        .from("sops")
+        .select("*")
+        .eq("is_active", true);
+
+      setTotalSops(allSops?.length || 0);
+
+      const { data: reviewedSops } = await supabase
+        .from("sop_reviews")
         .select("*")
         .eq("user_id", user.id);
 
-      const completed = sops?.filter(
-        (s: any) => s.completed === true
-      ).length || 0;
-
-      setSopsCompleted(completed);
-      setTotalSops(sops?.length || 0);
+      setSopsCompleted(reviewedSops?.length || 0);
 
       const { data: assessments } = await supabase
         .from("assessment_results")
@@ -75,11 +77,9 @@ export default function DashboardPage() {
   }
 
   const complianceScore = Math.round(
-    (
-      (contractsSigned > 0 ? 30 : 0) +
+    (contractsSigned > 0 ? 30 : 0) +
       (totalSops > 0 ? (sopsCompleted / totalSops) * 40 : 0) +
       ((assessmentScore || 0) / 100) * 30
-    )
   );
 
   if (loading) {
@@ -96,90 +96,36 @@ export default function DashboardPage() {
       <TopNav />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
-
         <div className="mb-8 rounded-3xl bg-careblue p-8 text-white">
           <h1 className="text-3xl font-bold">
-            Welcome {profile?.first_name || "Healthcare Practitioner"}
+            Welcome {profile?.first_name || profile?.full_name || "Healthcare Practitioner"}
           </h1>
-
           <p className="mt-2 opacity-90">
             CareLink Academy Practitioner Onboarding Portal
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-5">
-
-          <div className="rounded-2xl bg-white p-5 shadow">
-            <h3 className="text-sm text-gray-500">
-              Platforms Selected
-            </h3>
-            <p className="mt-2 text-3xl font-bold">
-              {platforms.length}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow">
-            <h3 className="text-sm text-gray-500">
-              Contracts Signed
-            </h3>
-            <p className="mt-2 text-3xl font-bold">
-              {contractsSigned}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow">
-            <h3 className="text-sm text-gray-500">
-              SOP Progress
-            </h3>
-            <p className="mt-2 text-3xl font-bold">
-              {sopsCompleted}/{totalSops}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow">
-            <h3 className="text-sm text-gray-500">
-              Assessment Score
-            </h3>
-            <p className="mt-2 text-3xl font-bold">
-              {assessmentScore}%
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow">
-            <h3 className="text-sm text-gray-500">
-              Compliance
-            </h3>
-            <p className="mt-2 text-3xl font-bold">
-              {complianceScore}%
-            </p>
-          </div>
-
+          <DashboardCard title="Platforms Selected" value={platforms.length} />
+          <DashboardCard title="Contracts Signed" value={contractsSigned} />
+          <DashboardCard title="SOP Progress" value={`${sopsCompleted}/${totalSops}`} />
+          <DashboardCard title="Assessment Score" value={`${assessmentScore}%`} />
+          <DashboardCard title="Compliance" value={`${complianceScore}%`} />
         </div>
 
         <div className="mt-10 rounded-3xl bg-white p-6 shadow">
-          <h2 className="mb-4 text-2xl font-bold">
-            My Selected Platforms
-          </h2>
+          <h2 className="mb-4 text-2xl font-bold">My Selected Platforms</h2>
 
           {platforms.length === 0 ? (
             <p>No platform access selected.</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-
               {platforms.map((platform) => (
-                <div
-                  key={platform}
-                  className="rounded-2xl border p-5"
-                >
-                  <h3 className="text-xl font-semibold">
-                    {platform}
-                  </h3>
-
+                <div key={platform} className="rounded-2xl border p-5">
+                  <h3 className="text-xl font-semibold">{platform}</h3>
                   <p className="mt-2 text-gray-600">
-                    Introduction, training videos,
-                    onboarding steps and registration.
+                    Introduction, training videos, onboarding steps and registration.
                   </p>
-
                   <Link
                     href={`/academy/${encodeURIComponent(platform)}`}
                     className="mt-4 inline-block rounded-xl bg-careblue px-4 py-2 text-white"
@@ -188,56 +134,44 @@ export default function DashboardPage() {
                   </Link>
                 </div>
               ))}
-
             </div>
           )}
         </div>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-4">
-
-          <Link
-            href="/learning"
-            className="rounded-2xl border p-6 text-center hover:bg-gray-50"
-          >
-            <h3 className="font-bold">Learning</h3>
-            <p className="mt-2 text-sm">
-              Platform training modules
-            </p>
-          </Link>
-
-          <Link
-            href="/contracts"
-            className="rounded-2xl border p-6 text-center hover:bg-gray-50"
-          >
-            <h3 className="font-bold">Contracts</h3>
-            <p className="mt-2 text-sm">
-              Review & sign agreements
-            </p>
-          </Link>
-
-          <Link
-            href="/guide"
-            className="rounded-2xl border p-6 text-center hover:bg-gray-50"
-          >
-            <h3 className="font-bold">Doctor Guide</h3>
-            <p className="mt-2 text-sm">
-              SOPs & Indemnity Upload
-            </p>
-          </Link>
-
-          <Link
-            href="/report"
-            className="rounded-2xl border p-6 text-center hover:bg-gray-50"
-          >
-            <h3 className="font-bold">Report</h3>
-            <p className="mt-2 text-sm">
-              Progress & Compliance
-            </p>
-          </Link>
-
+        <div className="mt-10 grid gap-4 md:grid-cols-5">
+          <NavCard href="/learning" title="Learning" text="Platform training modules" />
+          <NavCard href="/contracts" title="Contracts" text="Review & sign agreements" />
+          <NavCard href="/guide" title="Doctor Guide" text="Doctor onboarding guide" />
+          <NavCard href="/sops" title="SOPs" text="Review required SOPs" />
+          <NavCard href="/report" title="Report" text="Progress & compliance" />
         </div>
-
       </main>
     </>
+  );
+}
+
+function DashboardCard({ title, value }: { title: string; value: any }) {
+  return (
+    <div className="rounded-2xl bg-white p-5 shadow">
+      <h3 className="text-sm text-gray-500">{title}</h3>
+      <p className="mt-2 text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function NavCard({
+  href,
+  title,
+  text,
+}: {
+  href: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <Link href={href} className="rounded-2xl border p-6 text-center hover:bg-gray-50">
+      <h3 className="font-bold">{title}</h3>
+      <p className="mt-2 text-sm">{text}</p>
+    </Link>
   );
 }
