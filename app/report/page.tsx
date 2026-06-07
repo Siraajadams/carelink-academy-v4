@@ -4,33 +4,31 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import TopNav from "@/components/TopNav";
 
+const GUIDE_ID = "SA-DOCTOR-ONBOARDING-GUIDE";
+
 export default function ReportPage() {
   const [profile, setProfile] = useState<any>(null);
-  const [progress, setProgress] = useState<any[]>([]);
-  const [assessments, setAssessments] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [contractSignatures, setContractSignatures] = useState<any[]>([]);
+  const [sops, setSops] = useState<any[]>([]);
   const [sopReviews, setSopReviews] = useState<any[]>([]);
-  const [totalSops, setTotalSops] = useState(0);
   const [guideReview, setGuideReview] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const guideId = "SA-DOCTOR-ONBOARDING-GUIDE";
-
   useEffect(() => {
-    load();
+    loadReport();
   }, []);
 
-  async function load() {
+  async function loadReport() {
     setLoading(true);
     setMessage("");
 
     const {
       data: { user },
-      error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (!user) {
       setMessage("Please login to view your report.");
       setLoading(false);
       return;
@@ -47,60 +45,57 @@ export default function ReportPage() {
     const role = p?.role || "Doctor";
     const country = p?.country || "South Africa";
 
-    const { data: pr } = await supabase
-      .from("progress")
-      .select("*, modules(title)")
+    const { data: activeContracts } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("is_active", true)
+      .eq("role", role)
+      .eq("country", country);
+
+    const { data: signedContracts } = await supabase
+      .from("contract_signatures")
+      .select("*")
       .eq("user_id", user.id);
 
-    const { data: a } = await supabase
-      .from("assessments")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    const { data: c } = await supabase
-      .from("contract_signatures")
-      .select("*, contracts(title, version)")
-      .eq("user_id", user.id)
-      .order("signed_at", { ascending: false });
-
-    const { data: guide } = await supabase
-      .from("sop_reviews")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("sop_id", guideId)
-      .maybeSingle();
-
-    const { data: sopReviewData } = await supabase
-      .from("sop_reviews")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("reviewed", true)
-      .neq("sop_id", guideId)
-      .order("reviewed_at", { ascending: false });
-
-    const { count: sopTotalCount } = await supabase
+    const { data: activeSops } = await supabase
       .from("sops")
-      .select("*", { count: "exact", head: true })
+      .select("*")
       .eq("is_active", true)
-      .eq("country", country)
       .eq("role", role)
-      .neq("sop_code", guideId);
+      .eq("country", country)
+      .neq("sop_code", GUIDE_ID)
+      .order("sop_code", { ascending: true });
 
-    setProgress(pr || []);
-    setAssessments(a || []);
-    setContracts(c || []);
+    const { data: reviews } = await supabase
+      .from("sop_reviews")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("reviewed", true);
+
+    const guide = reviews?.find((r: any) => r.sop_id === GUIDE_ID);
+    const sopOnlyReviews =
+      reviews?.filter((r: any) => r.sop_id !== GUIDE_ID) || [];
+
+    setContracts(activeContracts || []);
+    setContractSignatures(signedContracts || []);
+    setSops(activeSops || []);
+    setSopReviews(sopOnlyReviews);
     setGuideReview(guide || null);
-    setSopReviews(sopReviewData || []);
-    setTotalSops(sopTotalCount || 0);
 
     setLoading(false);
   }
 
-  const completedModules = progress.filter((p) => p.completed);
-  const sopCompleted = sopReviews.length;
-  const sopProgress =
-    totalSops > 0 ? Math.round((sopCompleted / totalSops) * 100) : 0;
+  const signedCount = contractSignatures.length;
+  const contractTotal = contracts.length;
+  const sopReviewedCount = sopReviews.length;
+  const sopTotal = sops.length;
+
+  const totalSteps = contractTotal + sopTotal + 1;
+  const completedSteps =
+    signedCount + sopReviewedCount + (guideReview ? 1 : 0);
+
+  const overallProgress =
+    totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
   return (
     <>
@@ -115,7 +110,7 @@ export default function ReportPage() {
           {loading && <p className="mt-6">Loading report...</p>}
 
           {!loading && message && (
-            <p className="mt-6 rounded-2xl bg-yellow-50 p-4 text-sm text-yellow-800">
+            <p className="mt-6 rounded-2xl bg-yellow-50 p-4 text-yellow-800">
               {message}
             </p>
           )}
@@ -141,13 +136,10 @@ export default function ReportPage() {
 
               <div className="mt-6 grid gap-4 md:grid-cols-4">
                 <div className="rounded-2xl border p-5">
-                  <p className="text-sm text-slate-600">Modules</p>
-                  <p className="text-2xl font-bold">{completedModules.length}</p>
-                </div>
-
-                <div className="rounded-2xl border p-5">
                   <p className="text-sm text-slate-600">Contracts</p>
-                  <p className="text-2xl font-bold">{contracts.length}</p>
+                  <p className="text-2xl font-bold">
+                    {signedCount}/{contractTotal}
+                  </p>
                 </div>
 
                 <div className="rounded-2xl border p-5">
@@ -160,59 +152,33 @@ export default function ReportPage() {
                 <div className="rounded-2xl border p-5">
                   <p className="text-sm text-slate-600">SOPs</p>
                   <p className="text-2xl font-bold">
-                    {sopCompleted}/{totalSops}
+                    {sopReviewedCount}/{sopTotal}
                   </p>
+                </div>
+
+                <div className="rounded-2xl border p-5">
+                  <p className="text-sm text-slate-600">Overall</p>
+                  <p className="text-2xl font-bold">{overallProgress}%</p>
                 </div>
               </div>
 
-              <h2 className="mt-8 text-xl font-bold">Completed Modules</h2>
-              <ul className="mt-3 space-y-2">
-                {completedModules.length === 0 && (
-                  <li className="rounded-xl border p-3">
-                    No modules completed yet.
-                  </li>
-                )}
-
-                {completedModules.map((p) => (
-                  <li key={p.module_id} className="rounded-xl border p-3">
-                    {p.modules?.title || "Completed module"}
-                  </li>
-                ))}
-              </ul>
-
-              <h2 className="mt-8 text-xl font-bold">Assessments</h2>
-              <ul className="mt-3 space-y-2">
-                {assessments.length === 0 && (
-                  <li className="rounded-xl border p-3">
-                    No assessments completed yet.
-                  </li>
-                )}
-
-                {assessments.map((a) => (
-                  <li key={a.id} className="rounded-xl border p-3">
-                    {a.assessment_name || "Assessment"}:{" "}
-                    <strong>{a.score}%</strong> —{" "}
-                    {a.passed ? "Passed" : "Not passed"}
-                  </li>
-                ))}
-              </ul>
-
               <h2 className="mt-8 text-xl font-bold">Contract Sign-off</h2>
               <ul className="mt-3 space-y-2">
-                {contracts.length === 0 && (
+                {contractSignatures.length === 0 && (
                   <li className="rounded-xl border p-3">
                     No contract signed yet.
                   </li>
                 )}
 
-                {contracts.map((c) => (
+                {contractSignatures.map((c) => (
                   <li key={c.id} className="rounded-xl border p-3">
-                    {c.contracts?.title || "Contract"} v
-                    {c.contracts?.version || "1.0"}:{" "}
-                    <strong>Signed</strong> by {c.signer_name || "User"} on{" "}
-                    {c.signed_at
-                      ? new Date(c.signed_at).toLocaleString()
-                      : "date unavailable"}
+                    ✅ Contract signed by {c.signer_name || "User"}
+                    <br />
+                    <span className="text-sm text-slate-600">
+                      {c.signed_at || c.created_at
+                        ? new Date(c.signed_at || c.created_at).toLocaleString()
+                        : "Date unavailable"}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -221,7 +187,7 @@ export default function ReportPage() {
               <div className="mt-3 rounded-xl border p-3">
                 {guideReview ? (
                   <p>
-                    ✅ VideoMed Doctor Operations Guide reviewed on{" "}
+                    ✅ Guide reviewed on{" "}
                     {new Date(guideReview.reviewed_at).toLocaleString()}.
                   </p>
                 ) : (
@@ -232,15 +198,8 @@ export default function ReportPage() {
               <h2 className="mt-8 text-xl font-bold">SOP Reviews</h2>
               <div className="mt-3 rounded-xl border p-4">
                 <p className="font-semibold">
-                  {sopCompleted}/{totalSops} SOPs reviewed — {sopProgress}%
+                  {sopReviewedCount}/{sopTotal} SOPs reviewed
                 </p>
-
-                <div className="mt-3 h-3 rounded-full bg-slate-200">
-                  <div
-                    className="h-3 rounded-full bg-careblue"
-                    style={{ width: `${sopProgress}%` }}
-                  />
-                </div>
 
                 <ul className="mt-4 space-y-2">
                   {sopReviews.length === 0 && (
@@ -255,9 +214,7 @@ export default function ReportPage() {
                       <br />
                       <span className="text-sm text-slate-600">
                         Reviewed on{" "}
-                        {sop.reviewed_at
-                          ? new Date(sop.reviewed_at).toLocaleString()
-                          : "date unavailable"}
+                        {new Date(sop.reviewed_at).toLocaleString()}
                       </span>
                     </li>
                   ))}
