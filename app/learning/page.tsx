@@ -5,6 +5,12 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import TopNav from "@/components/TopNav";
 
+type CourseVideo = {
+  title: string;
+  description: string;
+  youtubeUrl: string;
+};
+
 type PlatformCourse = {
   name: string;
   slug: string;
@@ -14,6 +20,39 @@ type PlatformCourse = {
   howToNarrative: string;
   registerUrl: string;
 };
+
+const CPNBS_VIDEOS: CourseVideo[] = [
+  {
+    title: "Benefits of Carelink Booking Platform",
+    youtubeUrl: "https://youtu.be/p-RVogkVT9w?si=y_HNfAcfv6vvjNWG",
+    description:
+      "Overview of the benefits of the Carelink Booking Platform and how it improves patient access and appointment management.",
+  },
+  {
+    title: "Weight Loss with Wegovy",
+    youtubeUrl: "https://youtu.be/5659-7LxLyE?si=fVrCnl_d14RzlmvP",
+    description:
+      "Introduction to the Weight Loss with Wegovy programme and associated clinical workflows.",
+  },
+  {
+    title: "Make a Booking on Carelink",
+    youtubeUrl: "https://youtu.be/4rAjBIb7A-U?si=O98hBKMiVUOVNzBR",
+    description:
+      "Step-by-step guide showing how to create and manage bookings within Carelink.",
+  },
+  {
+    title: "Update Your Appointment Management for Videomed",
+    youtubeUrl: "https://youtu.be/yLzM6vN-QmY?si=7a1kMjyy5eodi39V",
+    description:
+      "Learn how to manage, update and maintain appointments within the Videomed platform.",
+  },
+  {
+    title: "Pharmacy First Appointment with CPNBS",
+    youtubeUrl: "https://youtu.be/tzoBQMqHimA?si=gzNoBT085voOEnsm",
+    description:
+      "Complete Pharmacy First appointment workflow using the CPNBS platform.",
+  },
+];
 
 const COURSE_CONTENT: Record<string, PlatformCourse> = {
   Videomed: {
@@ -31,10 +70,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   CPNBS: {
     name: "CPNBS",
     slug: "cpnbs",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "CPNBS supports community pharmacy appointment requests and helps connect patients to pharmacy-led healthcare services.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains how to receive appointment requests, review patient details, contact the patient and manage booking follow-up.",
     registerUrl: "https://cpnbs.com",
@@ -124,6 +163,11 @@ function parsePlatformAccess(value: string | string[] | null) {
     .filter(Boolean);
 }
 
+function youtubeEmbed(url: string) {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^?&]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : "";
+}
+
 export default function LearningPage() {
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [message, setMessage] = useState("");
@@ -205,7 +249,8 @@ export default function LearningPage() {
           <div className="rounded-3xl bg-careblue p-8 text-white">
             <h1 className="text-3xl font-bold">Learning</h1>
             <p className="mt-2 text-carelight">
-              Review the selected platform courses, watch the training videos and proceed to registration.
+              Review the selected platform courses, watch the training videos
+              and proceed to registration.
             </p>
           </div>
 
@@ -238,63 +283,114 @@ export default function LearningPage() {
                       Course Selected: {course.name}
                     </h2>
 
-                    <div className="mt-8 grid gap-6 md:grid-cols-2">
-                      <div>
-                        <h3 className="text-xl font-semibold">
-                          1. Introduction to {course.name}
-                        </h3>
+                    {course.name === "CPNBS" ? (
+                      <>
+                        <div className="mt-8 grid gap-8 md:grid-cols-2">
+                          {CPNBS_VIDEOS.map((video, index) => (
+                            <div
+                              key={video.youtubeUrl}
+                              className="rounded-2xl border bg-white p-4"
+                            >
+                              <h3 className="text-lg font-semibold">
+                                {index + 1}. {video.title}
+                              </h3>
 
-                        <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
-                          <iframe
-                            className="h-full w-full"
-                            src={course.introVideo}
-                            title={`${course.name} introduction video`}
-                            allowFullScreen
-                          />
+                              <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-slate-100">
+                                <iframe
+                                  className="h-full w-full"
+                                  src={youtubeEmbed(video.youtubeUrl)}
+                                  title={video.title}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              </div>
+
+                              <p className="mt-3 text-sm leading-6 text-slate-600">
+                                {video.description}
+                              </p>
+                            </div>
+                          ))}
                         </div>
 
-                        <p className="mt-4 text-sm leading-6 text-slate-600">
-                          {course.introNarrative}
-                        </p>
-                      </div>
+                        <div className="mt-8 flex flex-wrap gap-3">
+                          <a
+                            href={course.registerUrl}
+                            target="_blank"
+                            className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
+                          >
+                            Proceed to CPNBS
+                          </a>
 
-                      <div>
-                        <h3 className="text-xl font-semibold">
-                          2. How to use {course.name}
-                        </h3>
+                          <button
+                            type="button"
+                            onClick={() => markReviewed(course.name)}
+                            className="rounded-xl border px-5 py-3 font-semibold text-careblue"
+                          >
+                            Mark Learning Reviewed
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="mt-8 grid gap-6 md:grid-cols-2">
+                          <div>
+                            <h3 className="text-xl font-semibold">
+                              1. Introduction to {course.name}
+                            </h3>
 
-                        <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
-                          <iframe
-                            className="h-full w-full"
-                            src={course.howToVideo}
-                            title={`${course.name} how to use video`}
-                            allowFullScreen
-                          />
+                            <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
+                              <iframe
+                                className="h-full w-full"
+                                src={course.introVideo}
+                                title={`${course.name} introduction video`}
+                                allowFullScreen
+                              />
+                            </div>
+
+                            <p className="mt-4 text-sm leading-6 text-slate-600">
+                              {course.introNarrative}
+                            </p>
+                          </div>
+
+                          <div>
+                            <h3 className="text-xl font-semibold">
+                              2. How to use {course.name}
+                            </h3>
+
+                            <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
+                              <iframe
+                                className="h-full w-full"
+                                src={course.howToVideo}
+                                title={`${course.name} how to use video`}
+                                allowFullScreen
+                              />
+                            </div>
+
+                            <p className="mt-4 text-sm leading-6 text-slate-600">
+                              {course.howToNarrative}
+                            </p>
+                          </div>
                         </div>
 
-                        <p className="mt-4 text-sm leading-6 text-slate-600">
-                          {course.howToNarrative}
-                        </p>
-                      </div>
-                    </div>
+                        <div className="mt-8 flex flex-wrap gap-3">
+                          <a
+                            href={course.registerUrl}
+                            target="_blank"
+                            className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
+                          >
+                            3. Proceed to Register
+                          </a>
 
-                    <div className="mt-8 flex flex-wrap gap-3">
-                      <a
-                        href={course.registerUrl}
-                        target="_blank"
-                        className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
-                      >
-                        3. Proceed to Register
-                      </a>
-
-                      <button
-                        type="button"
-                        onClick={() => markReviewed(course.name)}
-                        className="rounded-xl border px-5 py-3 font-semibold text-careblue"
-                      >
-                        Mark Learning Reviewed
-                      </button>
-                    </div>
+                          <button
+                            type="button"
+                            onClick={() => markReviewed(course.name)}
+                            className="rounded-xl border px-5 py-3 font-semibold text-careblue"
+                          >
+                            Mark Learning Reviewed
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </section>
                 );
               })}
