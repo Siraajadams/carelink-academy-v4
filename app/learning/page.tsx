@@ -164,8 +164,27 @@ function parsePlatformAccess(value: string | string[] | null) {
 }
 
 function youtubeEmbed(url: string) {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^?&]+)/);
-  return match ? `https://www.youtube.com/embed/${match[1]}` : "";
+  try {
+    if (!url) return "";
+
+    let videoId = "";
+
+    if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1].split("?")[0];
+    }
+
+    if (url.includes("youtube.com/watch?v=")) {
+      videoId = url.split("watch?v=")[1].split("&")[0];
+    }
+
+    if (url.includes("youtube.com/embed/")) {
+      videoId = url.split("embed/")[1].split("?")[0];
+    }
+
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+  } catch {
+    return "";
+  }
 }
 
 export default function LearningPage() {
@@ -297,10 +316,11 @@ export default function LearningPage() {
 
                               <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-slate-100">
                                 <iframe
-                                  className="h-full w-full"
+                                  className="h-full w-full rounded-xl"
                                   src={youtubeEmbed(video.youtubeUrl)}
                                   title={video.title}
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                  referrerPolicy="strict-origin-when-cross-origin"
                                   allowFullScreen
                                 />
                               </div>
@@ -316,6 +336,7 @@ export default function LearningPage() {
                           <a
                             href={course.registerUrl}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
                           >
                             Proceed to CPNBS
@@ -340,9 +361,11 @@ export default function LearningPage() {
 
                             <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
                               <iframe
-                                className="h-full w-full"
+                                className="h-full w-full rounded-xl"
                                 src={course.introVideo}
                                 title={`${course.name} introduction video`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerPolicy="strict-origin-when-cross-origin"
                                 allowFullScreen
                               />
                             </div>
@@ -359,9 +382,11 @@ export default function LearningPage() {
 
                             <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
                               <iframe
-                                className="h-full w-full"
+                                className="h-full w-full rounded-xl"
                                 src={course.howToVideo}
                                 title={`${course.name} how to use video`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerPolicy="strict-origin-when-cross-origin"
                                 allowFullScreen
                               />
                             </div>
@@ -376,6 +401,7 @@ export default function LearningPage() {
                           <a
                             href={course.registerUrl}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
                           >
                             3. Proceed to Register
