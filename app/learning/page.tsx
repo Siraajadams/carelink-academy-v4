@@ -24,31 +24,31 @@ type PlatformCourse = {
 const CPNBS_VIDEOS: CourseVideo[] = [
   {
     title: "Benefits of Carelink Booking Platform",
-    youtubeUrl: "https://youtu.be/p-RVogkVT9w?si=y_HNfAcfv6vvjNWG",
+    youtubeUrl: "https://www.youtube.com/embed/p-RVogkVT9w",
     description:
       "Overview of the benefits of the Carelink Booking Platform and how it improves patient access and appointment management.",
   },
   {
     title: "Weight Loss with Wegovy",
-    youtubeUrl: "https://youtu.be/5659-7LxLyE?si=fVrCnl_d14RzlmvP",
+    youtubeUrl: "https://www.youtube.com/embed/5659-7LxLyE",
     description:
       "Introduction to the Weight Loss with Wegovy programme and associated clinical workflows.",
   },
   {
     title: "Make a Booking on Carelink",
-    youtubeUrl: "https://youtu.be/4rAjBIb7A-U?si=O98hBKMiVUOVNzBR",
+    youtubeUrl: "https://www.youtube.com/embed/4rAjBIb7A-U",
     description:
       "Step-by-step guide showing how to create and manage bookings within Carelink.",
   },
   {
     title: "Update Your Appointment Management for Videomed",
-    youtubeUrl: "https://youtu.be/yLzM6vN-QmY?si=7a1kMjyy5eodi39V",
+    youtubeUrl: "https://www.youtube.com/embed/yLzM6vN-QmY",
     description:
       "Learn how to manage, update and maintain appointments within the Videomed platform.",
   },
   {
     title: "Pharmacy First Appointment with CPNBS",
-    youtubeUrl: "https://youtu.be/tzoBQMqHimA?si=gzNoBT085voOEnsm",
+    youtubeUrl: "https://www.youtube.com/embed/tzoBQMqHimA",
     description:
       "Complete Pharmacy First appointment workflow using the CPNBS platform.",
   },
@@ -161,30 +161,6 @@ function parsePlatformAccess(value: string | string[] | null) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function youtubeEmbed(url: string) {
-  try {
-    if (!url) return "";
-
-    let videoId = "";
-
-    if (url.includes("youtu.be/")) {
-      videoId = url.split("youtu.be/")[1].split("?")[0];
-    }
-
-    if (url.includes("youtube.com/watch?v=")) {
-      videoId = url.split("watch?v=")[1].split("&")[0];
-    }
-
-    if (url.includes("youtube.com/embed/")) {
-      videoId = url.split("embed/")[1].split("?")[0];
-    }
-
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
-  } catch {
-    return "";
-  }
 }
 
 export default function LearningPage() {
@@ -317,7 +293,7 @@ export default function LearningPage() {
                               <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-slate-100">
                                 <iframe
                                   className="h-full w-full rounded-xl"
-                                  src={youtubeEmbed(video.youtubeUrl)}
+                                  src={video.youtubeUrl}
                                   title={video.title}
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                   referrerPolicy="strict-origin-when-cross-origin"
