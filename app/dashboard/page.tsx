@@ -2,8 +2,21 @@
 
 import Link from "next/link";
 
+type ProgressCard = {
+  label: string;
+  value: string;
+  detail: string;
+};
+
+type TrainingModule = {
+  step: string;
+  title: string;
+  text: string;
+  href: string;
+};
+
 export default function DashboardPage() {
-  const progressCards = [
+  const progressCards: ProgressCard[] = [
     {
       label: "Profile",
       value: "Not completed",
@@ -31,7 +44,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const trainingModules = [
+  const trainingModules: TrainingModule[] = [
     {
       step: "Step 1",
       title: "Learning",
@@ -108,8 +121,13 @@ export default function DashboardPage() {
 
         <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-5">
           {progressCards.map((card) => (
-            <div key={card.label} className="rounded-2xl bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">{card.label}</p>
+            <div
+              key={card.label}
+              className="rounded-2xl bg-white p-5 shadow-sm"
+            >
+              <p className="text-sm font-medium text-slate-500">
+                {card.label}
+              </p>
               <h3 className="mt-2 text-2xl font-bold text-slate-900">
                 {card.value}
               </h3>
@@ -161,3 +179,4 @@ export default function DashboardPage() {
       </div>
     </main>
   );
+}
