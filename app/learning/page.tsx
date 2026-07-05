@@ -59,12 +59,12 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
     name: "Videomed",
     slug: "videomed",
 
-    introVideo: "https://www.youtube.com/embed/KN4dmd-rlFE",
+    introVideo: "https://www.youtube.com/watch?v=U8ss1FUlaRc",
 
     introNarrative:
       "Welcome to VideoMed. This introduction explains the purpose of the platform, virtual consultations, digital healthcare workflows and pharmacy-supported care.",
 
-    howToVideo: "https://www.youtube.com/embed/U8ss1FUlaRc",
+    howToVideo: "https://www.youtube.com/watch?v=KN4dmd-rlFE&feature=youtu.be",
 
     howToNarrative:
       "This training demonstrates how to register, access the platform, complete onboarding and begin using VideoMed in clinical practice.",
