@@ -56,21 +56,21 @@ const CPNBS_VIDEOS: CourseVideo[] = [
 
 const COURSE_CONTENT: Record<string, PlatformCourse> = {
   Videomed: {
-  name: "Videomed",
-  slug: "videomed",
+    name: "Videomed",
+    slug: "videomed",
 
-  introVideo: "https://www.youtube.com/embed/KN4dmd-rlFE",
+    introVideo: "https://www.youtube.com/embed/KN4dmd-rlFE",
 
-  introNarrative:
-    "Welcome to VideoMed. This introductory training explains the purpose of the platform, how virtual consultations work, patient journeys, pharmacy integration and the overall clinical workflow.",
+    introNarrative:
+      "Welcome to VideoMed. This introduction explains the purpose of the platform, virtual consultations, digital healthcare workflows and pharmacy-supported care.",
 
-  howToVideo: "https://www.youtube.com/embed/KN4dmd-rlFE",
+    howToVideo: "https://www.youtube.com/embed/U8ss1FUlaRc",
 
-  howToNarrative:
-    "This practical demonstration shows how to use VideoMed from login through consultation, documentation, prescribing and patient management.",
+    howToNarrative:
+      "This training demonstrates how to register, access the platform, complete onboarding and begin using VideoMed in clinical practice.",
 
-  registerUrl: "https://videomed.co.za",
-},
+    registerUrl: "https://videomed.co.za",
+  },
 
   CPNBS: {
     name: "CPNBS",
@@ -358,7 +358,7 @@ export default function LearningPage() {
 
                           <div>
                             <h3 className="text-xl font-semibold">
-                              2. How to use {course.name}
+                              2. How to Register for {course.name}
                             </h3>
 
                             <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
