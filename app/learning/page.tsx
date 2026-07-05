@@ -56,16 +56,21 @@ const CPNBS_VIDEOS: CourseVideo[] = [
 
 const COURSE_CONTENT: Record<string, PlatformCourse> = {
   Videomed: {
-    name: "Videomed",
-    slug: "videomed",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
-    introNarrative:
-      "Videomed connects healthcare practitioners with patients through virtual consultations, digital workflows and pharmacy-supported care pathways.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
-    howToNarrative:
-      "This guide explains how practitioners access the platform, manage consultations, complete patient documentation and support referral pathways.",
-    registerUrl: "https://videomed.co.za",
-  },
+  name: "Videomed",
+  slug: "videomed",
+
+  introVideo: "https://www.youtube.com/embed/KN4dmd-rlFE",
+
+  introNarrative:
+    "Welcome to VideoMed. This introductory training explains the purpose of the platform, how virtual consultations work, patient journeys, pharmacy integration and the overall clinical workflow.",
+
+  howToVideo: "https://www.youtube.com/embed/KN4dmd-rlFE",
+
+  howToNarrative:
+    "This practical demonstration shows how to use VideoMed from login through consultation, documentation, prescribing and patient management.",
+
+  registerUrl: "https://videomed.co.za",
+},
 
   CPNBS: {
     name: "CPNBS",
