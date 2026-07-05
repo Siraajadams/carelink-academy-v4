@@ -24,31 +24,31 @@ type PlatformCourse = {
 const CPNBS_VIDEOS: CourseVideo[] = [
   {
     title: "Benefits of Carelink Booking Platform",
-    youtubeUrl: "https://www.youtube.com/embed/p-RVogkVT9w",
+    youtubeUrl: "https://youtu.be/p-RVogkVT9w",
     description:
       "Overview of the benefits of the Carelink Booking Platform and how it improves patient access and appointment management.",
   },
   {
     title: "Weight Loss with Wegovy",
-    youtubeUrl: "https://www.youtube.com/embed/5659-7LxLyE",
+    youtubeUrl: "https://youtu.be/5659-7LxLyE",
     description:
       "Introduction to the Weight Loss with Wegovy programme and associated clinical workflows.",
   },
   {
     title: "Make a Booking on Carelink",
-    youtubeUrl: "https://www.youtube.com/embed/4rAjBIb7A-U",
+    youtubeUrl: "https://youtu.be/4rAjBIb7A-U",
     description:
       "Step-by-step guide showing how to create and manage bookings within Carelink.",
   },
   {
     title: "Update Your Appointment Management for Videomed",
-    youtubeUrl: "https://www.youtube.com/embed/yLzM6vN-QmY",
+    youtubeUrl: "https://youtu.be/yLzM6vN-QmY",
     description:
       "Learn how to manage, update and maintain appointments within the Videomed platform.",
   },
   {
     title: "Pharmacy First Appointment with CPNBS",
-    youtubeUrl: "https://www.youtube.com/embed/tzoBQMqHimA",
+    youtubeUrl: "https://youtu.be/tzoBQMqHimA",
     description:
       "Complete Pharmacy First appointment workflow using the CPNBS platform.",
   },
@@ -58,17 +58,12 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   Videomed: {
     name: "Videomed",
     slug: "videomed",
-
-    introVideo: "https://www.youtube.com/watch?v=U8ss1FUlaRc",
-
+    introVideo: "https://youtu.be/KN4dmd-rlFE",
     introNarrative:
       "Welcome to VideoMed. This introduction explains the purpose of the platform, virtual consultations, digital healthcare workflows and pharmacy-supported care.",
-
-    howToVideo: "https://www.youtube.com/watch?v=KN4dmd-rlFE&feature=youtu.be",
-
+    howToVideo: "https://youtu.be/U8ss1FUlaRc",
     howToNarrative:
       "This training demonstrates how to register, access the platform, complete onboarding and begin using VideoMed in clinical practice.",
-
     registerUrl: "https://videomed.co.za",
   },
 
@@ -87,10 +82,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   "Symptom.AI": {
     name: "Symptom.AI",
     slug: "symptom-ai",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "Symptom.AI supports patient triage by helping healthcare workers review symptoms, risk levels and recommended care pathways.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains how to complete a symptom assessment, interpret triage outputs and direct patients to the correct care option.",
     registerUrl: "https://symptomai.digital",
@@ -99,10 +94,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   Carelink: {
     name: "Carelink",
     slug: "carelink",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "Carelink supports healthcare referral, onboarding and care coordination workflows across pharmacies, doctors and healthcare partners.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains how to use Carelink to manage referrals, access practitioner workflows and support patient navigation.",
     registerUrl: "https://carelink.digital",
@@ -111,10 +106,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   "Clinical Voice Transcriber": {
     name: "Clinical Voice Transcriber",
     slug: "clinical-voice-transcriber",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "The Clinical Voice Transcriber helps healthcare practitioners convert consultation voice notes into structured clinical documentation.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains how to record, review and use transcribed clinical notes safely within the consultation workflow.",
     registerUrl: "#",
@@ -123,10 +118,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   "Weight Management": {
     name: "Weight Management",
     slug: "weight-management",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "The Weight Management programme supports structured patient onboarding, clinical review and follow-up for weight-loss care pathways.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains how to review eligibility, support treatment follow-up and document patient progress.",
     registerUrl: "#",
@@ -135,10 +130,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   "HIV Prevention Services": {
     name: "HIV Prevention Services",
     slug: "hiv-prevention-services",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "HIV Prevention Services training introduces pharmacy-led and practitioner-supported HIV prevention workflows including PrEP awareness and referral.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains patient education, referral, documentation and follow-up responsibilities in HIV prevention services.",
     registerUrl: "#",
@@ -147,10 +142,10 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
   "Independent Prescribing": {
     name: "Independent Prescribing",
     slug: "independent-prescribing",
-    introVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    introVideo: "",
     introNarrative:
       "Independent Prescribing training supports practitioners with safe, structured prescribing workflows and governance expectations.",
-    howToVideo: "https://www.youtube.com/embed/REPLACE_VIDEO_ID",
+    howToVideo: "",
     howToNarrative:
       "This guide explains prescribing documentation, clinical checks, escalation and record-keeping expectations.",
     registerUrl: "#",
@@ -159,13 +154,95 @@ const COURSE_CONTENT: Record<string, PlatformCourse> = {
 
 function parsePlatformAccess(value: string | string[] | null) {
   if (!value) return [];
-
   if (Array.isArray(value)) return value;
 
   return value
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function getYouTubeId(url: string) {
+  if (!url) return "";
+
+  if (url.includes("youtu.be/")) {
+    return url.split("youtu.be/")[1].split("?")[0];
+  }
+
+  if (url.includes("watch?v=")) {
+    return url.split("watch?v=")[1].split("&")[0];
+  }
+
+  if (url.includes("/embed/")) {
+    return url.split("/embed/")[1].split("?")[0];
+  }
+
+  return "";
+}
+
+function VideoCard({
+  title,
+  description,
+  youtubeUrl,
+  lessonNumber,
+}: {
+  title: string;
+  description: string;
+  youtubeUrl: string;
+  lessonNumber: number;
+}) {
+  const videoId = getYouTubeId(youtubeUrl);
+  const thumbnail = videoId
+    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    : "";
+
+  return (
+    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <h3 className="text-lg font-semibold">
+        {lessonNumber}. {title}
+      </h3>
+
+      {youtubeUrl ? (
+        <a
+          href={youtubeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative mt-4 block aspect-video overflow-hidden rounded-xl bg-slate-100"
+        >
+          {thumbnail && (
+            <img
+              src={thumbnail}
+              alt={title}
+              className="h-full w-full object-cover"
+            />
+          )}
+
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow">
+              ▶
+            </div>
+          </div>
+        </a>
+      ) : (
+        <div className="mt-4 flex aspect-video items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+          Video coming soon
+        </div>
+      )}
+
+      <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+
+      {youtubeUrl && (
+        <a
+          href={youtubeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-block rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+        >
+          ▶ Watch Video
+        </a>
+      )}
+    </div>
+  );
 }
 
 export default function LearningPage() {
@@ -199,8 +276,7 @@ export default function LearningPage() {
       return;
     }
 
-    const selected = parsePlatformAccess(data?.platform_access_needed || "");
-    setPlatforms(selected);
+    setPlatforms(parsePlatformAccess(data?.platform_access_needed || ""));
     setLoading(false);
   }
 
@@ -249,8 +325,8 @@ export default function LearningPage() {
           <div className="rounded-3xl bg-careblue p-8 text-white">
             <h1 className="text-3xl font-bold">Learning</h1>
             <p className="mt-2 text-carelight">
-              Review the selected platform courses, watch the training videos
-              and proceed to registration.
+              Review your training modules, open videos in YouTube, then mark
+              each platform as reviewed.
             </p>
           </div>
 
@@ -271,7 +347,6 @@ export default function LearningPage() {
             <div className="mt-8 space-y-8">
               {platforms.map((platform) => {
                 const course = COURSE_CONTENT[platform];
-
                 if (!course) return null;
 
                 return (
@@ -284,120 +359,53 @@ export default function LearningPage() {
                     </h2>
 
                     {course.name === "CPNBS" ? (
-                      <>
-                        <div className="mt-8 grid gap-8 md:grid-cols-2">
-                          {CPNBS_VIDEOS.map((video, index) => (
-                            <div
-                              key={video.youtubeUrl}
-                              className="rounded-2xl border bg-white p-4"
-                            >
-                              <h3 className="text-lg font-semibold">
-                                {index + 1}. {video.title}
-                              </h3>
-
-                              <div className="mt-4 aspect-video overflow-hidden rounded-xl bg-slate-100">
-                                <iframe
-                                  className="h-full w-full rounded-xl"
-                                  src={video.youtubeUrl}
-                                  title={video.title}
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                  referrerPolicy="strict-origin-when-cross-origin"
-                                  allowFullScreen
-                                />
-                              </div>
-
-                              <p className="mt-3 text-sm leading-6 text-slate-600">
-                                {video.description}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-8 flex flex-wrap gap-3">
-                          <a
-                            href={course.registerUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
-                          >
-                            Proceed to CPNBS
-                          </a>
-
-                          <button
-                            type="button"
-                            onClick={() => markReviewed(course.name)}
-                            className="rounded-xl border px-5 py-3 font-semibold text-careblue"
-                          >
-                            Mark Learning Reviewed
-                          </button>
-                        </div>
-                      </>
+                      <div className="mt-8 grid gap-8 md:grid-cols-2">
+                        {CPNBS_VIDEOS.map((video, index) => (
+                          <VideoCard
+                            key={video.youtubeUrl}
+                            title={video.title}
+                            description={video.description}
+                            youtubeUrl={video.youtubeUrl}
+                            lessonNumber={index + 1}
+                          />
+                        ))}
+                      </div>
                     ) : (
-                      <>
-                        <div className="mt-8 grid gap-6 md:grid-cols-2">
-                          <div>
-                            <h3 className="text-xl font-semibold">
-                              1. Introduction to {course.name}
-                            </h3>
+                      <div className="mt-8 grid gap-6 md:grid-cols-2">
+                        <VideoCard
+                          title={`Introduction to ${course.name}`}
+                          description={course.introNarrative}
+                          youtubeUrl={course.introVideo}
+                          lessonNumber={1}
+                        />
 
-                            <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
-                              <iframe
-                                className="h-full w-full rounded-xl"
-                                src={course.introVideo}
-                                title={`${course.name} introduction video`}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                referrerPolicy="strict-origin-when-cross-origin"
-                                allowFullScreen
-                              />
-                            </div>
-
-                            <p className="mt-4 text-sm leading-6 text-slate-600">
-                              {course.introNarrative}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h3 className="text-xl font-semibold">
-                              2. How to Register for {course.name}
-                            </h3>
-
-                            <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-slate-100">
-                              <iframe
-                                className="h-full w-full rounded-xl"
-                                src={course.howToVideo}
-                                title={`${course.name} how to use video`}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                referrerPolicy="strict-origin-when-cross-origin"
-                                allowFullScreen
-                              />
-                            </div>
-
-                            <p className="mt-4 text-sm leading-6 text-slate-600">
-                              {course.howToNarrative}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-8 flex flex-wrap gap-3">
-                          <a
-                            href={course.registerUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
-                          >
-                            3. Proceed to Register
-                          </a>
-
-                          <button
-                            type="button"
-                            onClick={() => markReviewed(course.name)}
-                            className="rounded-xl border px-5 py-3 font-semibold text-careblue"
-                          >
-                            Mark Learning Reviewed
-                          </button>
-                        </div>
-                      </>
+                        <VideoCard
+                          title={`How to Register for ${course.name}`}
+                          description={course.howToNarrative}
+                          youtubeUrl={course.howToVideo}
+                          lessonNumber={2}
+                        />
+                      </div>
                     )}
+
+                    <div className="mt-8 flex flex-wrap gap-3">
+                      <a
+                        href={course.registerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-xl bg-careblue px-5 py-3 font-semibold text-white"
+                      >
+                        Proceed to {course.name}
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => markReviewed(course.name)}
+                        className="rounded-xl border px-5 py-3 font-semibold text-careblue"
+                      >
+                        Mark Learning Reviewed
+                      </button>
+                    </div>
                   </section>
                 );
               })}
